@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   ShoppingCart,
@@ -10,11 +11,13 @@ import {
   ClipboardList,
   MapPin,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 import { useCart } from "@/hooks/useCart";
 import { ROUTES } from "@/lib/constants";
 import SearchBar from "@/components/ui/SearchBar";
+import ProfileSheet from "@/components/layout/ProfileSheet";
 
 const bottomNavItems = [
   { label: "Home", href: ROUTES.home, icon: Home, exact: true },
@@ -33,6 +36,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const { user, openAuthModal } = useAuthStore();
   const { itemCount } = useCart();
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -127,26 +132,33 @@ export default function Navbar() {
 
               {/* Auth */}
               {user ? (
-                <Link
-                  href={ROUTES.orders}
-                  className="flex items-center justify-center h-9 w-9 rounded-xl transition-colors"
-                >
-                  {user.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.avatar_url}
-                      alt={user.name ?? "User"}
-                      className="h-7 w-7 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="h-7 w-7 rounded-full flex items-center justify-center text-white text-[11px] font-black"
-                      style={{ backgroundColor: "var(--color-brand)" }}
-                    >
-                      {user.name?.[0]?.toUpperCase() ?? "U"}
-                    </div>
-                  )}
-                </Link>
+                <>
+                  <button
+                    onClick={() => setIsProfileOpen(true)}
+                    className="flex items-center justify-center h-9 w-9 rounded-xl transition-colors hover:opacity-80"
+                  >
+                    {user.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.avatar_url}
+                        alt={user.name ?? "User"}
+                        className="h-7 w-7 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="h-7 w-7 rounded-full flex items-center justify-center text-white text-[11px] font-black"
+                        style={{ backgroundColor: "var(--color-brand)" }}
+                      >
+                        {user.name?.[0]?.toUpperCase() ?? "U"}
+                      </div>
+                    )}
+                  </button>
+
+                  <ProfileSheet
+                    isOpen={isProfileOpen}
+                    onClose={() => setIsProfileOpen(false)}
+                  />
+                </>
               ) : (
                 <button
                   onClick={openAuthModal}
@@ -176,15 +188,14 @@ export default function Navbar() {
         className="md:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        {/* Floating card effect */}
         <div
-          className="mx-3 mb-3 bg-white rounded-2xl shadow-lg overflow-hidden"
+          className="mx-3 mb-3 bg-white rounded-2xl overflow-hidden"
           style={{
             boxShadow:
               "0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)",
           }}
         >
-          <div className="flex items-center justify-around px-2 py-1.5">
+          <div className="flex items-center justify-around px-2 py-2">
             {bottomNavItems.map(({ label, href, icon: Icon, exact }) => {
               const active = isActive(href, exact);
               const isCart = href === ROUTES.cart;
@@ -193,39 +204,43 @@ export default function Navbar() {
                 <Link
                   key={href}
                   href={href}
-                  className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
+                  className="flex flex-col items-center justify-center gap-1 flex-1 py-0.5"
                 >
-                  {/* Pill background for active */}
+                  {/* Pill for active, plain icon for inactive */}
                   <div
-                    className="flex items-center justify-center rounded-xl transition-all duration-200 relative"
+                    className="relative flex items-center justify-center gap-1.5 rounded-xl transition-all duration-200"
                     style={{
                       backgroundColor: active
                         ? "var(--color-brand)"
                         : "transparent",
-                      padding: active ? "6px 16px" : "6px 8px",
-                      minWidth: active ? "80px" : "auto",
+                      paddingTop: "5px",
+                      paddingBottom: "5px",
+                      paddingLeft: active ? "14px" : "8px",
+                      paddingRight: active ? "14px" : "8px",
                     }}
                   >
                     <Icon
-                      size={20}
+                      size={19}
                       strokeWidth={active ? 2.5 : 1.8}
                       style={{ color: active ? "#ffffff" : "#9ca3af" }}
                     />
-                    {/* Active label inline inside pill */}
                     {active && (
-                      <span className="ml-1.5 text-[11px] font-bold text-white whitespace-nowrap">
+                      <span className="text-[11px] font-bold text-white whitespace-nowrap">
                         {label}
                       </span>
                     )}
                     {/* Cart badge */}
                     {isCart && itemCount > 0 && (
                       <span
-                        className="absolute -top-1 -right-1 min-w-[15px] h-[15px] flex items-center justify-center text-[8px] font-black rounded-full"
+                        className="absolute -top-1 -right-1 min-w-[15px] h-[15px] flex items-center justify-center text-[8px] font-black rounded-full leading-none"
                         style={{
                           backgroundColor: active
                             ? "#fff"
                             : "var(--color-brand)",
                           color: active ? "var(--color-brand)" : "#fff",
+                          border: active
+                            ? "1px solid var(--color-brand)"
+                            : "none",
                         }}
                       >
                         {itemCount > 9 ? "9+" : itemCount}
@@ -233,74 +248,18 @@ export default function Navbar() {
                     )}
                   </div>
 
-                  {/* Label below for inactive */}
+                  {/* Label only for inactive */}
                   {!active && (
-                    <span className="text-[9px] font-medium text-gray-400 leading-none">
+                    <span
+                      className="text-[9px] font-medium leading-none"
+                      style={{ color: "#9ca3af" }}
+                    >
                       {label}
                     </span>
                   )}
                 </Link>
               );
             })}
-
-            {/* Profile tab */}
-            {(() => {
-              const active = pathname.startsWith("/profile");
-              return user ? (
-                <Link
-                  href={ROUTES.orders}
-                  className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
-                >
-                  <div
-                    className="flex items-center justify-center rounded-xl transition-all duration-200"
-                    style={{
-                      backgroundColor: active
-                        ? "var(--color-brand)"
-                        : "transparent",
-                      padding: "6px 8px",
-                    }}
-                  >
-                    {user.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={user.avatar_url}
-                        alt={user.name ?? ""}
-                        className="h-5 w-5 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="h-5 w-5 rounded-full flex items-center justify-center text-white text-[9px] font-black"
-                        style={{ backgroundColor: "var(--color-brand)" }}
-                      >
-                        {user.name?.[0]?.toUpperCase() ?? "U"}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-[9px] font-medium text-gray-400 leading-none">
-                    Profile
-                  </span>
-                </Link>
-              ) : (
-                <button
-                  onClick={openAuthModal}
-                  className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
-                >
-                  <div
-                    className="flex items-center justify-center rounded-xl transition-all duration-200"
-                    style={{ padding: "6px 8px" }}
-                  >
-                    <User
-                      size={20}
-                      strokeWidth={1.8}
-                      className="text-gray-400"
-                    />
-                  </div>
-                  <span className="text-[9px] font-medium text-gray-400 leading-none">
-                    Login
-                  </span>
-                </button>
-              );
-            })()}
           </div>
         </div>
       </nav>

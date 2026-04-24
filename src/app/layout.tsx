@@ -5,6 +5,7 @@ import AuthProvider from "@/components/layout/AuthProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AnnouncementBar from "@/components/ui/AnnouncementBar";
+import AuthModal from "@/components/layout/AuthModal";
 
 export const metadata: Metadata = {
   title: {
@@ -53,6 +54,7 @@ export default function RootLayout({
           <Navbar />
           <main className="flex-1 w-full pb-24 md:pb-0">{children}</main>
           <Footer />
+          <AuthModal />
         </AuthProvider>
       </body>
     </html>
