@@ -1,0 +1,309 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  ShoppingCart,
+  User,
+  Home,
+  LayoutGrid,
+  ClipboardList,
+  MapPin,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/authStore";
+import { useCart } from "@/hooks/useCart";
+import { ROUTES } from "@/lib/constants";
+import SearchBar from "@/components/ui/SearchBar";
+
+const bottomNavItems = [
+  { label: "Home", href: ROUTES.home, icon: Home, exact: true },
+  { label: "Products", href: ROUTES.products, icon: LayoutGrid, exact: false },
+  { label: "Cart", href: ROUTES.cart, icon: ShoppingCart, exact: false },
+  { label: "Orders", href: ROUTES.orders, icon: ClipboardList, exact: false },
+];
+
+const desktopNavLinks = [
+  { label: "Home", href: ROUTES.home, exact: true },
+  { label: "Products", href: ROUTES.products, exact: false },
+  { label: "Orders", href: ROUTES.orders, exact: false },
+];
+
+export default function Navbar() {
+  const pathname = usePathname();
+  const { user, openAuthModal } = useAuthStore();
+  const { itemCount } = useCart();
+
+  const isActive = (href: string, exact: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href);
+
+  return (
+    <>
+      {/* ── TOP BAR ──────────────────────────────────────────── */}
+      <header
+        className="sticky top-0 z-40 w-full bg-white"
+        style={{ borderBottom: "2px solid #e8ecef" }}
+      >
+        {/* Row 1 — Logo + Location + Search + Nav + Icons */}
+        <div className="container-app">
+          <div className="flex items-center gap-2 h-14">
+            {/* Logo */}
+            <Link href={ROUTES.home} className="flex-shrink-0">
+              <span
+                className="text-xl font-black tracking-tight leading-none"
+                style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}
+              >
+                <span style={{ color: "var(--color-navy)" }}>best</span>
+                <span style={{ color: "var(--color-brand)" }}>deal</span>
+                <span style={{ color: "var(--color-navy)" }}>bazar</span>
+              </span>
+            </Link>
+
+            {/* Location pill — mobile only */}
+            <button
+              className="md:hidden flex items-center gap-1 flex-shrink-0 px-2 py-1 rounded-full"
+              style={{
+                backgroundColor: "var(--color-brand-50)",
+                border: "1px solid var(--color-brand-200)",
+              }}
+            >
+              <MapPin
+                size={10}
+                style={{ color: "var(--color-brand)" }}
+                className="flex-shrink-0"
+              />
+              <span
+                className="text-[10px] font-bold truncate max-w-[70px]"
+                style={{ color: "var(--color-brand-700)" }}
+              >
+                Kozhikode
+              </span>
+            </button>
+
+            {/* Search — desktop only inline */}
+            <div className="hidden md:flex flex-1 min-w-0">
+              <SearchBar variant="compact" />
+            </div>
+
+            {/* Desktop nav links */}
+            <nav className="hidden md:flex items-center gap-1 flex-shrink-0">
+              {desktopNavLinks.map(({ label, href, exact }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
+                  style={
+                    isActive(href, exact)
+                      ? {
+                          backgroundColor: "var(--color-brand)",
+                          color: "#ffffff",
+                        }
+                      : { color: "var(--color-navy)" }
+                  }
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Right icons */}
+            <div className="flex items-center gap-1 flex-shrink-0 ml-auto md:ml-0">
+              {/* Cart */}
+              <Link
+                href={ROUTES.cart}
+                className="relative flex items-center justify-center h-9 w-9 rounded-xl transition-colors"
+                style={{ color: "var(--color-navy)" }}
+              >
+                <ShoppingCart size={19} />
+                {itemCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[17px] h-[17px] flex items-center justify-center text-[9px] font-black text-white rounded-full px-1 leading-none"
+                    style={{ backgroundColor: "var(--color-brand)" }}
+                  >
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Auth */}
+              {user ? (
+                <Link
+                  href={ROUTES.orders}
+                  className="flex items-center justify-center h-9 w-9 rounded-xl transition-colors"
+                >
+                  {user.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={user.avatar_url}
+                      alt={user.name ?? "User"}
+                      className="h-7 w-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="h-7 w-7 rounded-full flex items-center justify-center text-white text-[11px] font-black"
+                      style={{ backgroundColor: "var(--color-brand)" }}
+                    >
+                      {user.name?.[0]?.toUpperCase() ?? "U"}
+                    </div>
+                  )}
+                </Link>
+              ) : (
+                <button
+                  onClick={openAuthModal}
+                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold text-white active:scale-95 transition-all"
+                  style={{ backgroundColor: "var(--color-brand)" }}
+                >
+                  <User size={13} />
+                  <span className="hidden sm:inline">Login</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2 — Search full width (mobile only) */}
+        <div
+          className="md:hidden pb-2.5 container-app"
+          style={{ borderTop: "1px solid #f1f5f9" }}
+        >
+          <SearchBar variant="full" />
+        </div>
+      </header>
+
+      {/* ── BOTTOM NAV (mobile only) ──────────────────────────── */}
+      {/* ── BOTTOM NAV (mobile only) ──────────────────────────── */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        {/* Floating card effect */}
+        <div
+          className="mx-3 mb-3 bg-white rounded-2xl shadow-lg overflow-hidden"
+          style={{
+            boxShadow:
+              "0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div className="flex items-center justify-around px-2 py-1.5">
+            {bottomNavItems.map(({ label, href, icon: Icon, exact }) => {
+              const active = isActive(href, exact);
+              const isCart = href === ROUTES.cart;
+
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
+                >
+                  {/* Pill background for active */}
+                  <div
+                    className="flex items-center justify-center rounded-xl transition-all duration-200 relative"
+                    style={{
+                      backgroundColor: active
+                        ? "var(--color-brand)"
+                        : "transparent",
+                      padding: active ? "6px 16px" : "6px 8px",
+                      minWidth: active ? "80px" : "auto",
+                    }}
+                  >
+                    <Icon
+                      size={20}
+                      strokeWidth={active ? 2.5 : 1.8}
+                      style={{ color: active ? "#ffffff" : "#9ca3af" }}
+                    />
+                    {/* Active label inline inside pill */}
+                    {active && (
+                      <span className="ml-1.5 text-[11px] font-bold text-white whitespace-nowrap">
+                        {label}
+                      </span>
+                    )}
+                    {/* Cart badge */}
+                    {isCart && itemCount > 0 && (
+                      <span
+                        className="absolute -top-1 -right-1 min-w-[15px] h-[15px] flex items-center justify-center text-[8px] font-black rounded-full"
+                        style={{
+                          backgroundColor: active
+                            ? "#fff"
+                            : "var(--color-brand)",
+                          color: active ? "var(--color-brand)" : "#fff",
+                        }}
+                      >
+                        {itemCount > 9 ? "9+" : itemCount}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Label below for inactive */}
+                  {!active && (
+                    <span className="text-[9px] font-medium text-gray-400 leading-none">
+                      {label}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+
+            {/* Profile tab */}
+            {(() => {
+              const active = pathname.startsWith("/profile");
+              return user ? (
+                <Link
+                  href={ROUTES.orders}
+                  className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
+                >
+                  <div
+                    className="flex items-center justify-center rounded-xl transition-all duration-200"
+                    style={{
+                      backgroundColor: active
+                        ? "var(--color-brand)"
+                        : "transparent",
+                      padding: "6px 8px",
+                    }}
+                  >
+                    {user.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.avatar_url}
+                        alt={user.name ?? ""}
+                        className="h-5 w-5 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-white text-[9px] font-black"
+                        style={{ backgroundColor: "var(--color-brand)" }}
+                      >
+                        {user.name?.[0]?.toUpperCase() ?? "U"}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-medium text-gray-400 leading-none">
+                    Profile
+                  </span>
+                </Link>
+              ) : (
+                <button
+                  onClick={openAuthModal}
+                  className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1"
+                >
+                  <div
+                    className="flex items-center justify-center rounded-xl transition-all duration-200"
+                    style={{ padding: "6px 8px" }}
+                  >
+                    <User
+                      size={20}
+                      strokeWidth={1.8}
+                      className="text-gray-400"
+                    />
+                  </div>
+                  <span className="text-[9px] font-medium text-gray-400 leading-none">
+                    Login
+                  </span>
+                </button>
+              );
+            })()}
+          </div>
+        </div>
+      </nav>
+    </>
+  );
+}
