@@ -107,7 +107,7 @@ export default function AnnouncementBar({
         <div className="relative w-full px-1.5 sm:px-4">
           <div className="flex items-center justify-between gap-1 sm:gap-4">
             {/* Left spacer - reduced on mobile */}
-            {dismissible && <div className="w-4 sm:w-6 flex-shrink-0" />}
+            {dismissible && <div className="w-4 sm:w-6 shrink-0" />}
 
             {/* Main content - centered with reduced height and gaps */}
             <div className="flex-1 flex items-center justify-center gap-1 sm:gap-2 flex-wrap py-1.5 sm:py-2">

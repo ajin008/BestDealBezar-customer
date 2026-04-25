@@ -26,6 +26,7 @@ export function useStoreSettings(): UseStoreSettingsReturn {
   useEffect(() => {
     // Already cached — no need to fetch
     if (cache) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSettings(cache);
       setIsLoading(false);
       return;
