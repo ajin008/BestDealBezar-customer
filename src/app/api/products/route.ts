@@ -1,12 +1,13 @@
 // ============================================================
 // API ROUTE — /api/products
-// Supports filtering, search, and pagination via query params
+// Supports filtering, search, sort and pagination via query params
 //
 // Query params:
 //   ?category=groceries-staples  → filter by category slug
 //   ?search=rice                 → search by name
 //   ?featured=true               → featured products only
 //   ?new_arrival=true            → new arrivals only
+//   ?sort=price_asc|price_desc|newest → sort order
 //   ?page=1&limit=20             → pagination
 // ============================================================
 
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
     const search = searchParams.get("search");
     const featured = searchParams.get("featured");
     const newArrival = searchParams.get("new_arrival");
+    const sort = searchParams.get("sort");
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
     const limit = Math.min(
       50,
@@ -31,6 +33,32 @@ export async function GET(request: Request) {
 
     const supabase = createServerClient();
 
+    // ── Step 1: resolve category slug → category_id ──────────
+    // We can't filter joined tables directly in Supabase
+    // So fetch category_id first, then filter products by it
+    let categoryId: string | null = null;
+
+    if (category) {
+      const { data: categoryData } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("slug", category)
+        .eq("is_active", true)
+        .single();
+
+      if (!categoryData) {
+        // Category not found — return empty
+        return Response.json({
+          data: [],
+          error: null,
+          pagination: { total: 0, page, limit, totalPages: 0 },
+        });
+      }
+
+      categoryId = categoryData.id;
+    }
+
+    // ── Step 2: build product query ───────────────────────────
     let query = supabase
       .from("products")
       .select(
@@ -50,13 +78,11 @@ export async function GET(request: Request) {
         { count: "exact" }
       )
       .eq("is_active", true)
-      .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // Apply filters
-    if (category) {
-      // Join through categories table using slug
-      query = query.eq("categories.slug", category);
+    // ── Step 3: apply filters ─────────────────────────────────
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
     }
 
     if (search) {
@@ -71,6 +97,17 @@ export async function GET(request: Request) {
       query = query.eq("is_new_arrival", true);
     }
 
+    // ── Step 4: apply sort ────────────────────────────────────
+    if (sort === "price_asc") {
+      query = query.order("selling_price", { ascending: true });
+    } else if (sort === "price_desc") {
+      query = query.order("selling_price", { ascending: false });
+    } else {
+      // Default — newest first
+      query = query.order("created_at", { ascending: false });
+    }
+
+    // ── Step 5: execute ───────────────────────────────────────
     const { data, error, count } = await query;
 
     if (error) {
@@ -81,8 +118,15 @@ export async function GET(request: Request) {
       );
     }
 
+    // Sort product_images by sort_order
+    const products = (data as ProductWithImages[]).map((p) => ({
+      ...p,
+      product_images:
+        p.product_images?.sort((a, b) => a.sort_order - b.sort_order) ?? [],
+    }));
+
     return Response.json({
-      data: data as ProductWithImages[],
+      data: products,
       error: null,
       pagination: {
         total: count ?? 0,

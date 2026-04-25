@@ -2,6 +2,7 @@ import HeroBanner from "@/components/ui/HeroBanner";
 import CategoryScroll from "@/components/ui/CategoryScroll";
 import DeliveryInfoBanner from "@/components/ui/DeliveryInfoBanner";
 import FeaturedProducts from "@/components/ui/FeaturedProducts";
+import TrustPriorityBanner from "@/components/ui/TrustPriorityBanner";
 
 export default function HomePage() {
   return (
@@ -30,6 +31,7 @@ export default function HomePage() {
         filters={{ limit: 8 }}
         seeAllHref="/products"
       />
+      <TrustPriorityBanner />
     </div>
   );
 }
