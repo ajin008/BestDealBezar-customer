@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import {
   ShoppingCart,
@@ -11,8 +11,6 @@ import {
   ClipboardList,
   MapPin,
 } from "lucide-react";
-
-import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 import { useCart } from "@/hooks/useCart";
 import { ROUTES } from "@/lib/constants";
@@ -36,8 +34,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const { user, openAuthModal } = useAuthStore();
   const { itemCount } = useCart();
-
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
 
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -49,7 +50,6 @@ export default function Navbar() {
         className="sticky top-0 z-40 w-full bg-white"
         style={{ borderBottom: "2px solid #e8ecef" }}
       >
-        {/* Row 1 — Logo + Location + Search + Nav + Icons */}
         <div className="container-app">
           <div className="flex items-center gap-2 h-14">
             {/* Logo */}
@@ -85,7 +85,7 @@ export default function Navbar() {
               </span>
             </button>
 
-            {/* Search — desktop only inline */}
+            {/* Search — desktop only */}
             <div className="hidden md:flex flex-1 min-w-0">
               <SearchBar variant="compact" />
             </div>
@@ -120,7 +120,8 @@ export default function Navbar() {
                 style={{ color: "var(--color-navy)" }}
               >
                 <ShoppingCart size={19} />
-                {itemCount > 0 && (
+                {/* mounted check prevents hydration mismatch */}
+                {mounted && itemCount > 0 && (
                   <span
                     className="absolute -top-1 -right-1 min-w-[17px] h-[17px] flex items-center justify-center text-[9px] font-black text-white rounded-full px-1 leading-none"
                     style={{ backgroundColor: "var(--color-brand)" }}
@@ -153,7 +154,6 @@ export default function Navbar() {
                       </div>
                     )}
                   </button>
-
                   <ProfileSheet
                     isOpen={isProfileOpen}
                     onClose={() => setIsProfileOpen(false)}
@@ -183,7 +183,6 @@ export default function Navbar() {
       </header>
 
       {/* ── BOTTOM NAV (mobile only) ──────────────────────────── */}
-      {/* ── BOTTOM NAV (mobile only) ──────────────────────────── */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -206,7 +205,6 @@ export default function Navbar() {
                   href={href}
                   className="flex flex-col items-center justify-center gap-1 flex-1 py-0.5"
                 >
-                  {/* Pill for active, plain icon for inactive */}
                   <div
                     className="relative flex items-center justify-center gap-1.5 rounded-xl transition-all duration-200"
                     style={{
@@ -229,8 +227,8 @@ export default function Navbar() {
                         {label}
                       </span>
                     )}
-                    {/* Cart badge */}
-                    {isCart && itemCount > 0 && (
+                    {/* Cart badge — mounted check fixes hydration */}
+                    {isCart && mounted && itemCount > 0 && (
                       <span
                         className="absolute -top-1 -right-1 min-w-[15px] h-[15px] flex items-center justify-center text-[8px] font-black rounded-full leading-none"
                         style={{
@@ -248,7 +246,6 @@ export default function Navbar() {
                     )}
                   </div>
 
-                  {/* Label only for inactive */}
                   {!active && (
                     <span
                       className="text-[9px] font-medium leading-none"
