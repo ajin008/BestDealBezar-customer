@@ -39,16 +39,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check expiry
-    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+    // Check expiry — column is valid_until
+    if (coupon.valid_until && new Date(coupon.valid_until) < new Date()) {
       return Response.json(
         { data: null, error: "Coupon has expired" },
         { status: 400 }
       );
     }
 
-    // Check usage limit
-    if (coupon.max_uses && coupon.used_count >= coupon.max_uses) {
+    // Check usage limit — column is usage_limit / usage_count
+    if (coupon.usage_limit && coupon.usage_count >= coupon.usage_limit) {
       return Response.json(
         { data: null, error: "Coupon usage limit reached" },
         { status: 400 }
@@ -60,24 +60,25 @@ export async function POST(request: Request) {
       return Response.json(
         {
           data: null,
-          error: `Minimum order amount of ₹${coupon.min_order_amount} required`,
+          error: `Minimum order of ₹${coupon.min_order_amount} required`,
         },
         { status: 400 }
       );
     }
 
-    // Calculate discount
+    // Calculate discount — column is type / discount_value
     const discountAmount =
-      coupon.discount_type === "flat"
+      coupon.type === "flat"
         ? coupon.discount_value
         : Math.round((subtotal * coupon.discount_value) / 100);
 
     return Response.json({
       data: {
         code: coupon.code,
-        discount_type: coupon.discount_type,
+        type: coupon.type,
         discount_value: coupon.discount_value,
         discount_amount: discountAmount,
+        description: coupon.description,
       },
       error: null,
     });

@@ -162,6 +162,7 @@ export async function POST(request: Request) {
 
     // Apply coupon if provided
     let discountAmount = 0;
+
     if (coupon_code) {
       const { data: coupon } = await supabase
         .from("coupons")
@@ -172,14 +173,14 @@ export async function POST(request: Request) {
 
       if (coupon) {
         const notExpired =
-          !coupon.expires_at || new Date(coupon.expires_at) > new Date();
+          !coupon.valid_until || new Date(coupon.valid_until) > new Date();
         const notExhausted =
-          !coupon.max_uses || coupon.used_count < coupon.max_uses;
+          !coupon.usage_limit || coupon.usage_count < coupon.usage_limit;
         const meetsMinimum = subtotal >= coupon.min_order_amount;
 
         if (notExpired && notExhausted && meetsMinimum) {
           discountAmount =
-            coupon.discount_type === "flat"
+            coupon.type === "flat"
               ? coupon.discount_value
               : Math.round((subtotal * coupon.discount_value) / 100);
         }

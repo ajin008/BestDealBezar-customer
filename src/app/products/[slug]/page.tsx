@@ -296,7 +296,7 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [addedToCart, setAddedToCart] = useState(false);
+
   const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
@@ -322,6 +322,7 @@ export default function ProductDetailPage() {
     }
   }, [product, getItem]);
 
+  // Replace the existing handleAddToCart:
   const handleAddToCart = useCallback(() => {
     if (!product) return;
     const firstImage = product.product_images?.[0]?.url ?? null;
@@ -339,9 +340,10 @@ export default function ProductDetailPage() {
         stock_quantity: product.stock_quantity,
       });
     }
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
-  }, [product, quantity, isInCart, updateQuantity, addItem]);
+
+    // Redirect to cart immediately
+    router.push(ROUTES.cart);
+  }, [product, quantity, isInCart, updateQuantity, addItem, router]);
 
   const handleShare = useCallback(() => {
     if ("share" in navigator && window.innerWidth < 768) {
@@ -583,20 +585,12 @@ export default function ProductDetailPage() {
                       className="flex-1 flex items-center justify-center gap-2 h-12 px-4 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.98]"
                       style={{ backgroundColor: "var(--color-brand)" }}
                     >
-                      {addedToCart ? (
-                        <>
-                          <Check size={16} /> Added!
-                        </>
-                      ) : inCart ? (
-                        <>
-                          <ShoppingCart size={16} /> Update Cart
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart size={16} /> Add to Cart ·{" "}
-                          {formatPrice(product.selling_price * quantity)}
-                        </>
-                      )}
+                      <ShoppingCart size={16} />
+                      {inCart
+                        ? "Go to Cart"
+                        : `Add to Cart · ${formatPrice(
+                            product.selling_price * quantity
+                          )}`}
                     </button>
                   </div>
 

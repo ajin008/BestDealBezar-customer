@@ -4,6 +4,12 @@
 // Proceed to checkout triggers auth if not logged in
 // ============================================================
 
+// ============================================================
+// PAGE — /cart
+// Shows cart items, totals, free delivery progress
+// Proceed to checkout triggers auth if not logged in
+// ============================================================
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,14 +21,15 @@ import {
   Plus,
   Minus,
   ArrowRight,
-  Tag,
   ChevronLeft,
   ShoppingBag,
 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useAuthStore } from "@/stores/authStore";
+import { useCoupon } from "@/hooks/useCoupon";
 import { formatPrice } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
+import CouponInput from "@/components/cart/CouponInput";
 
 // ── Free delivery progress bar ────────────────────────────────
 function FreeDeliveryBar({
@@ -189,10 +196,20 @@ export default function CartPage() {
   } = useCart();
 
   const { user, openAuthModal } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const {
+    coupon,
+    isLoading: couponLoading,
+    error: couponError,
+    applyCoupon,
+    removeCoupon,
+    discount,
+  } = useCoupon();
 
+  const [mounted, setMounted] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
+
+  const finalTotal = total - discount;
 
   function handleCheckout() {
     if (!user) {
@@ -202,7 +219,7 @@ export default function CartPage() {
     window.location.href = ROUTES.checkout;
   }
 
-  // Avoid hydration mismatch
+  // ── Hydration guard ───────────────────────────────────────
   if (!mounted) {
     return (
       <div className="container-app py-4">
@@ -219,7 +236,7 @@ export default function CartPage() {
     );
   }
 
-  // Empty cart
+  // ── Empty cart ────────────────────────────────────────────
   if (items.length === 0) {
     return (
       <div className="container-app py-4">
@@ -306,6 +323,16 @@ export default function CartPage() {
           ))}
         </div>
 
+        {/* Coupon input */}
+        <CouponInput
+          subtotal={subtotal}
+          appliedCoupon={coupon}
+          isLoading={couponLoading}
+          error={couponError}
+          onApply={applyCoupon}
+          onRemove={removeCoupon}
+        />
+
         {/* Order summary */}
         <div
           className="bg-white rounded-2xl p-4 flex flex-col gap-3"
@@ -322,6 +349,7 @@ export default function CartPage() {
           </h3>
 
           <div className="flex flex-col gap-2">
+            {/* Subtotal */}
             <div className="flex justify-between text-xs">
               <span className="text-gray-500">
                 Subtotal ({itemCount} items)
@@ -333,6 +361,23 @@ export default function CartPage() {
                 {formatPrice(subtotal)}
               </span>
             </div>
+
+            {/* Discount — only when coupon applied */}
+            {discount > 0 && (
+              <div className="flex justify-between text-xs">
+                <span style={{ color: "var(--color-brand)" }}>
+                  Discount ({coupon?.code})
+                </span>
+                <span
+                  className="font-semibold"
+                  style={{ color: "var(--color-brand)" }}
+                >
+                  -{formatPrice(discount)}
+                </span>
+              </div>
+            )}
+
+            {/* Delivery */}
             <div className="flex justify-between text-xs">
               <span className="text-gray-500">Delivery fee</span>
               <span
@@ -350,6 +395,7 @@ export default function CartPage() {
 
             <div className="h-px my-1" style={{ backgroundColor: "#e8ecef" }} />
 
+            {/* Total */}
             <div className="flex justify-between">
               <span
                 className="text-sm font-black"
@@ -357,38 +403,32 @@ export default function CartPage() {
               >
                 Total
               </span>
-              <span
-                className="text-sm font-black"
-                style={{ color: "var(--color-navy)" }}
-              >
-                {formatPrice(total)}
-              </span>
+              <div className="flex flex-col items-end">
+                {discount > 0 && (
+                  <span className="text-xs text-gray-400 line-through">
+                    {formatPrice(total)}
+                  </span>
+                )}
+                <span
+                  className="text-sm font-black"
+                  style={{ color: "var(--color-navy)" }}
+                >
+                  {formatPrice(finalTotal)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Coupon placeholder */}
-        <button
-          className="flex items-center gap-2 p-3 rounded-2xl text-sm font-semibold transition-colors"
-          style={{
-            border: "1.5px dashed #e8ecef",
-            color: "var(--color-brand)",
-            backgroundColor: "var(--color-brand-50)",
-          }}
-        >
-          <Tag size={15} />
-          Apply coupon code
-        </button>
-
         {/* Checkout button */}
         <button
           onClick={handleCheckout}
-          className="w-full flex items-center justify-between h-13 px-5 rounded-2xl text-sm font-black text-white transition-all active:scale-[0.98]"
+          className="w-full flex items-center justify-between h-14 px-5 rounded-2xl text-sm font-black text-white transition-all active:scale-[0.98]"
           style={{ backgroundColor: "var(--color-brand)" }}
         >
           <span>{user ? "Proceed to Checkout" : "Login to Checkout"}</span>
           <div className="flex items-center gap-1">
-            <span>{formatPrice(total)}</span>
+            <span>{formatPrice(finalTotal)}</span>
             <ArrowRight size={16} />
           </div>
         </button>
