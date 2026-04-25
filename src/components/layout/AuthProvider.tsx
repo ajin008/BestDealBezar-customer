@@ -3,10 +3,10 @@
 // Checks Supabase session on app load and populates authStore
 // Must wrap the entire app in layout.tsx
 // ============================================================
-
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -16,11 +16,11 @@ export default function AuthProvider({
   children: React.ReactNode;
 }) {
   const { setUser, setLoading } = useAuthStore();
+  const router = useRouter();
 
   useEffect(() => {
     const supabase = createClient();
 
-    // Get initial session
     async function getSession() {
       try {
         const {
@@ -48,7 +48,6 @@ export default function AuthProvider({
 
     getSession();
 
-    // Listen for auth state changes (login, logout, token refresh)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -64,13 +63,20 @@ export default function AuthProvider({
             session.user.phone ?? session.user.user_metadata?.phone ?? null,
           avatar_url: session.user.user_metadata?.avatar_url ?? null,
         });
+
+        // Check for stored redirect destination after login
+        const redirectTo = localStorage.getItem("auth_redirect");
+        if (redirectTo) {
+          localStorage.removeItem("auth_redirect");
+          router.push(redirectTo);
+        }
       } else {
         setUser(null);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [setUser, setLoading]);
+  }, [setUser, setLoading, router]);
 
   return <>{children}</>;
 }

@@ -1,28 +1,29 @@
 // ============================================================
 // API ROUTE — /api/orders
-// GET  → fetch orders by phone number (customer's order history)
+// GET  → fetch orders by email or phone
 // POST → create a new order
 // ============================================================
 
 import { createServerClient } from "@/lib/supabase/server";
 import type { Order, OrderWithItems } from "@/types/database";
 
-// GET /api/orders?phone=9876543210
+// GET /api/orders?email=user@gmail.com
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const email = searchParams.get("email");
     const phone = searchParams.get("phone");
 
-    if (!phone) {
+    if (!email && !phone) {
       return Response.json(
-        { data: null, error: "Phone number is required" },
+        { data: null, error: "Email or phone is required" },
         { status: 400 }
       );
     }
 
     const supabase = createServerClient();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("orders")
       .select(
         `
@@ -38,8 +39,15 @@ export async function GET(request: Request) {
         )
       `
       )
-      .eq("customer_phone", phone)
       .order("created_at", { ascending: false });
+
+    if (email) {
+      query = query.eq("customer_email", email);
+    } else if (phone) {
+      query = query.eq("customer_phone", phone);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("[orders] GET Supabase error:", error.message);
@@ -237,7 +245,6 @@ export async function POST(request: Request) {
 
     if (itemsError) {
       console.error("[orders] POST insert items error:", itemsError.message);
-      // Order created but items failed — log for manual recovery
       return Response.json(
         { data: null, error: "Failed to save order items" },
         { status: 500 }

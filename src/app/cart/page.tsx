@@ -4,15 +4,10 @@
 // Proceed to checkout triggers auth if not logged in
 // ============================================================
 
-// ============================================================
-// PAGE — /cart
-// Shows cart items, totals, free delivery progress
-// Proceed to checkout triggers auth if not logged in
-// ============================================================
-
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -183,6 +178,8 @@ function CartItemRow({
 
 // ── Main page ─────────────────────────────────────────────────
 export default function CartPage() {
+  const router = useRouter();
+
   const {
     items,
     itemCount,
@@ -213,10 +210,13 @@ export default function CartPage() {
 
   function handleCheckout() {
     if (!user) {
+      // Store destination so AuthProvider redirects after login
+      localStorage.setItem("auth_redirect", ROUTES.checkout);
+      // Open modal directly — no page redirect needed
       openAuthModal();
       return;
     }
-    window.location.href = ROUTES.checkout;
+    router.push(ROUTES.checkout);
   }
 
   // ── Hydration guard ───────────────────────────────────────
@@ -362,7 +362,7 @@ export default function CartPage() {
               </span>
             </div>
 
-            {/* Discount — only when coupon applied */}
+            {/* Discount */}
             {discount > 0 && (
               <div className="flex justify-between text-xs">
                 <span style={{ color: "var(--color-brand)" }}>

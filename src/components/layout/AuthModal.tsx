@@ -44,14 +44,18 @@ function AuthModalContent() {
 
     try {
       const supabase = createClient();
-      const next = searchParams.get("next") ?? "/";
+
+      // Save intended destination to localStorage before OAuth redirect
+      const urlParams = new URLSearchParams(window.location.search);
+      const next = urlParams.get("next") ?? "/";
+      if (next && next !== "/") {
+        localStorage.setItem("auth_redirect", next);
+      }
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${
-            window.location.origin
-          }/auth/callback?next=${encodeURIComponent(next)}`,
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 

@@ -5,20 +5,26 @@
 // Redirects to intended page or home
 // ============================================================
 
+// ============================================================
+// AUTH CALLBACK
+// Handles OAuth redirect from Google
+// Exchanges code for Supabase session → sets cookie
+// Redirects to home — AuthProvider handles final redirect
+// ============================================================
+
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest } from "next/server"; // ← fix: next/server not next/request
 import { createServerClient } from "@supabase/ssr";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/?auth=error`);
+    return NextResponse.redirect(`${origin}/`);
   }
 
-  const response = NextResponse.redirect(`${origin}${next}`);
+  const response = NextResponse.redirect(`${origin}/`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,7 +47,6 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[auth/callback] Exchange error:", error.message);
-    return NextResponse.redirect(`${origin}/?auth=error`);
   }
 
   return response;
