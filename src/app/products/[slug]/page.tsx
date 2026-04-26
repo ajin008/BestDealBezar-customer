@@ -296,7 +296,6 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-
   const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
@@ -326,7 +325,6 @@ export default function ProductDetailPage() {
     }
   }, [product, getItem]);
 
-  // Replace the existing handleAddToCart:
   const handleAddToCart = useCallback(() => {
     if (!product) return;
     const firstImage = product.product_images?.[0]?.url ?? null;
@@ -345,7 +343,6 @@ export default function ProductDetailPage() {
       });
     }
 
-    // Redirect to cart immediately
     router.push(ROUTES.cart);
   }, [product, quantity, isInCart, updateQuantity, addItem, router]);
 
@@ -537,7 +534,7 @@ export default function ProductDetailPage() {
                 <p className="text-xs text-gray-400">Inclusive of all taxes</p>
               </div>
 
-              {/* Stock status */}
+              {/* Stock status — SINGLE block, no duplicate */}
               {outOfStock ? (
                 <div className="bg-red-50 rounded-xl p-3 flex items-center gap-2">
                   <AlertCircle size={16} className="text-red-500" />
@@ -549,21 +546,10 @@ export default function ProductDetailPage() {
                 <div className="bg-amber-50 rounded-xl p-3 flex items-center gap-2">
                   <AlertCircle size={16} className="text-amber-600" />
                   <span className="text-sm font-medium text-amber-600">
-                    Only {product.stock_quantity} left — Order soon
+                    Only {product.stock_quantity} left — Order soon!
                   </span>
                 </div>
               ) : null}
-
-              {/* Available stock count */}
-              {!outOfStock &&
-                product.stock_quantity <= product.low_stock_threshold && (
-                  <div className="bg-amber-50 rounded-xl p-3 flex items-center gap-2">
-                    <AlertCircle size={16} className="text-amber-600" />
-                    <span className="text-sm font-medium text-amber-600">
-                      Only {product.stock_quantity} items left — Order soon!
-                    </span>
-                  </div>
-                )}
 
               {/* Short description */}
               {product.short_description && (
@@ -593,7 +579,6 @@ export default function ProductDetailPage() {
                     <QuantitySelector
                       quantity={quantity}
                       onQuantityChange={(q) => {
-                        // Cap at available stock
                         setQuantity(Math.min(q, product.stock_quantity));
                       }}
                       maxStock={product.stock_quantity}
