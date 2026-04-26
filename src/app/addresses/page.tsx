@@ -6,7 +6,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   MapPin,
   Plus,
@@ -48,6 +49,7 @@ function AddressForm({
     pincode: initial?.pincode ?? "",
     is_default: initial?.is_default ?? false,
   });
+
   const [error, setError] = useState<string | null>(null);
 
   function update(key: keyof AddressInput, value: string | boolean) {
@@ -203,8 +205,12 @@ function AddressForm({
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────
-export default function AddressesPage() {
+// ── Main Content ─────────────────────────────────────────────
+function AddressesContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") ?? null;
+
   useRequireAuth();
 
   const { addresses, isLoading, addAddress, updateAddress, deleteAddress } =
@@ -213,12 +219,22 @@ export default function AddressesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   async function handleAdd(data: AddressInput) {
     setFormLoading(true);
+    setFormError(null);
     const { error } = await addAddress(data);
     setFormLoading(false);
-    if (!error) setShowForm(false);
+    if (error) {
+      setFormError(error);
+    } else {
+      setShowForm(false);
+      // Redirect back if came from checkout
+      if (redirectTo) {
+        router.push(redirectTo);
+      }
+    }
   }
 
   async function handleEdit(id: string, data: AddressInput) {
@@ -238,16 +254,24 @@ export default function AddressesPage() {
     await updateAddress(id, { is_default: true });
   }
 
+  const handleBack = () => {
+    if (redirectTo) {
+      router.push(redirectTo);
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <div className="container-app py-4">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Link
-          href="/"
+        <button
+          onClick={handleBack}
           className="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors flex-shrink-0"
         >
           <ChevronLeft size={18} style={{ color: "var(--color-navy)" }} />
-        </Link>
+        </button>
         <div>
           <h1
             className="text-xl font-black"
@@ -259,7 +283,9 @@ export default function AddressesPage() {
             Saved Addresses
           </h1>
           <p className="text-xs text-gray-400">
-            Manage your delivery addresses
+            {redirectTo === "/checkout"
+              ? "Add an address to continue checkout"
+              : "Manage your delivery addresses"}
           </p>
         </div>
       </div>
@@ -296,7 +322,9 @@ export default function AddressesPage() {
             No addresses yet
           </h2>
           <p className="text-sm text-gray-400 mb-6 max-w-xs">
-            Add a delivery address to make checkout faster
+            {redirectTo === "/checkout"
+              ? "Add a delivery address to continue with checkout"
+              : "Add a delivery address to make checkout faster"}
           </p>
           <button
             onClick={() => setShowForm(true)}
@@ -447,13 +475,26 @@ export default function AddressesPage() {
             >
               New Address
             </p>
-            <button onClick={() => setShowForm(false)}>
+            <button
+              onClick={() => {
+                setShowForm(false);
+                setFormError(null);
+              }}
+            >
               <X size={16} className="text-gray-400" />
             </button>
           </div>
+          {formError && (
+            <div className="p-3 rounded-xl bg-red-50 mb-3">
+              <p className="text-xs text-red-600 font-medium">{formError}</p>
+            </div>
+          )}
           <AddressForm
             onSubmit={handleAdd}
-            onCancel={() => setShowForm(false)}
+            onCancel={() => {
+              setShowForm(false);
+              setFormError(null);
+            }}
             isLoading={formLoading}
           />
         </div>
@@ -475,5 +516,14 @@ export default function AddressesPage() {
         </button>
       )}
     </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────
+export default function AddressesPage() {
+  return (
+    <Suspense fallback={null}>
+      <AddressesContent />
+    </Suspense>
   );
 }

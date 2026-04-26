@@ -127,7 +127,7 @@ function AddressSelector({
 
       {/* Add new address */}
       <Link
-        href="/addresses"
+        href="/addresses?redirect=/checkout"
         className="flex items-center justify-center gap-2 p-3 rounded-2xl text-sm font-bold transition-all"
         style={{
           border: "1.5px dashed #e8ecef",

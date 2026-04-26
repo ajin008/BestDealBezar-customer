@@ -19,6 +19,9 @@ import {
   Package,
   ShoppingBag,
   AlertCircle,
+  Clock,
+  Truck,
+  Home,
 } from "lucide-react";
 import { useOrder } from "@/hooks/useOrders";
 import { formatPrice, formatDateTime } from "@/lib/utils";
@@ -28,34 +31,49 @@ import Skeleton from "@/components/ui/Skeleton";
 // ── Status Step ───────────────────────────────────────────────
 function StatusStep({
   label,
-  done,
+  completed,
   active,
+  isLast,
 }: {
   label: string;
-  done: boolean;
+  completed: boolean;
   active: boolean;
+  isLast: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 flex-1">
+    <div className="flex flex-1 flex-col items-center relative">
+      {/* Connector line - only show if not last item */}
+      {!isLast && (
+        <div
+          className="absolute left-1/2 top-3 w-full h-[2px] -translate-y-1/2"
+          style={{
+            backgroundColor: completed ? "var(--color-brand)" : "#e8ecef",
+          }}
+        />
+      )}
+
+      {/* Step circle */}
       <div
-        className="h-6 w-6 rounded-full flex items-center justify-center transition-all"
+        className="relative z-10 h-6 w-6 rounded-full flex items-center justify-center transition-all"
         style={{
-          backgroundColor: done || active ? "var(--color-brand)" : "#e8ecef",
+          backgroundColor:
+            completed || active ? "var(--color-brand)" : "#e8ecef",
         }}
       >
-        {done ? (
+        {completed ? (
           <CheckCircle size={14} color="#fff" />
+        ) : active ? (
+          <div className="h-2 w-2 rounded-full bg-white" />
         ) : (
-          <div
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: active ? "#fff" : "#9ca3af" }}
-          />
+          <div className="h-2 w-2 rounded-full bg-gray-400" />
         )}
       </div>
+
+      {/* Step label */}
       <span
-        className="text-[9px] font-semibold text-center leading-tight"
+        className="text-[10px] font-semibold text-center mt-1.5 leading-tight whitespace-nowrap"
         style={{
-          color: done || active ? "var(--color-brand)" : "#9ca3af",
+          color: completed || active ? "var(--color-brand)" : "#9ca3af",
         }}
       >
         {label}
@@ -66,46 +84,40 @@ function StatusStep({
 
 // ── Order Timeline ────────────────────────────────────────────
 function OrderTimeline({ status }: { status: string }) {
-  const steps = ["pending", "confirmed", "out_for_delivery", "delivered"];
-  const currentIndex = steps.indexOf(status);
+  const steps = [
+    { key: "pending", label: "Placed", icon: Clock },
+    { key: "confirmed", label: "Confirmed", icon: CheckCircle },
+    { key: "out_for_delivery", label: "Out for Delivery", icon: Truck },
+    { key: "delivered", label: "Delivered", icon: Home },
+  ];
+
+  const currentIndex = steps.findIndex((step) => step.key === status);
   const isCancelled = status === "cancelled";
 
   if (isCancelled) {
     return (
-      <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50">
-        <XCircle size={16} className="text-red-500 flex-shrink-0" />
-        <p className="text-sm font-semibold text-red-600">Order Cancelled</p>
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50">
+        <XCircle size={20} className="text-red-500 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-bold text-red-600">Order Cancelled</p>
+          <p className="text-xs text-red-500 mt-0.5">
+            This order has been cancelled
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-start gap-0">
-      {steps.map((step, i) => (
-        <div key={step} className="flex items-center flex-1">
-          <StatusStep
-            label={
-              step === "pending"
-                ? "Placed"
-                : step === "confirmed"
-                ? "Confirmed"
-                : step === "out_for_delivery"
-                ? "Out for Delivery"
-                : "Delivered"
-            }
-            done={i < currentIndex}
-            active={i === currentIndex}
-          />
-          {i < steps.length - 1 && (
-            <div
-              className="h-0.5 flex-1 -mt-4"
-              style={{
-                backgroundColor:
-                  i < currentIndex ? "var(--color-brand)" : "#e8ecef",
-              }}
-            />
-          )}
-        </div>
+    <div className="flex items-stretch gap-0">
+      {steps.map((step, index) => (
+        <StatusStep
+          key={step.key}
+          label={step.label}
+          completed={index < currentIndex}
+          active={index === currentIndex}
+          isLast={index === steps.length - 1}
+        />
       ))}
     </div>
   );
@@ -240,11 +252,11 @@ function OrderDetailContent() {
 
         {/* Order timeline */}
         <div
-          className="bg-white rounded-2xl p-4"
+          className="bg-white rounded-2xl p-5"
           style={{ border: "1.5px solid #e8ecef" }}
         >
           <h2
-            className="text-sm font-black mb-4"
+            className="text-sm font-black mb-5"
             style={{ color: "var(--color-navy)" }}
           >
             Order Status
