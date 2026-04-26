@@ -1,30 +1,31 @@
 // ============================================================
 // PAGE — /orders/[id]
 // Single order detail + success state after checkout
+// Cancel option for pending orders
 // ============================================================
 
 "use client";
 
+import { useState, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
   ChevronLeft,
   CheckCircle,
-  Clock,
-  Truck,
   XCircle,
   MapPin,
   CreditCard,
   Package,
   ShoppingBag,
+  AlertCircle,
 } from "lucide-react";
 import { useOrder } from "@/hooks/useOrders";
 import { formatPrice, formatDateTime } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 import Skeleton from "@/components/ui/Skeleton";
-import { Suspense } from "react";
 
+// ── Status Step ───────────────────────────────────────────────
 function StatusStep({
   label,
   done,
@@ -63,8 +64,9 @@ function StatusStep({
   );
 }
 
+// ── Order Timeline ────────────────────────────────────────────
 function OrderTimeline({ status }: { status: string }) {
-  const steps = ["pending", "confirmed", "processing", "shipped", "delivered"];
+  const steps = ["pending", "confirmed", "out_for_delivery", "delivered"];
   const currentIndex = steps.indexOf(status);
   const isCancelled = status === "cancelled";
 
@@ -87,10 +89,8 @@ function OrderTimeline({ status }: { status: string }) {
                 ? "Placed"
                 : step === "confirmed"
                 ? "Confirmed"
-                : step === "processing"
-                ? "Packing"
-                : step === "shipped"
-                ? "Shipped"
+                : step === "out_for_delivery"
+                ? "Out for Delivery"
                 : "Delivered"
             }
             done={i < currentIndex}
@@ -111,12 +111,44 @@ function OrderTimeline({ status }: { status: string }) {
   );
 }
 
+// ── Main Content ──────────────────────────────────────────────
 function OrderDetailContent() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const isSuccess = searchParams.get("success") === "true";
   const { order, isLoading, error } = useOrder(id);
 
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
+  async function handleCancel() {
+    if (!confirm("Are you sure you want to cancel this order?")) return;
+
+    setIsCancelling(true);
+    setCancelError(null);
+
+    try {
+      const res = await fetch(`/api/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      });
+
+      const json = await res.json();
+
+      if (json.error) {
+        setCancelError(json.error);
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setCancelError("Failed to cancel order. Please try again.");
+    } finally {
+      setIsCancelling(false);
+    }
+  }
+
+  // ── Loading ─────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="container-app py-4 flex flex-col gap-3">
@@ -128,6 +160,7 @@ function OrderDetailContent() {
     );
   }
 
+  // ── Error ────────────────────────────────────────────────────
   if (error || !order) {
     return (
       <div className="container-app py-20 flex flex-col items-center text-center">
@@ -288,8 +321,8 @@ function OrderDetailContent() {
             <div className="flex justify-between text-xs">
               <span className="text-gray-500">Subtotal</span>
               <span
-                style={{ color: "var(--color-navy)" }}
                 className="font-semibold"
+                style={{ color: "var(--color-navy)" }}
               >
                 {formatPrice(order.subtotal)}
               </span>
@@ -396,6 +429,43 @@ function OrderDetailContent() {
             </span>
           </div>
         </div>
+
+        {/* Cancel order — only for pending orders */}
+        {order.status === "pending" && (
+          <div className="flex flex-col gap-2">
+            {cancelError && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50">
+                <AlertCircle size={14} className="text-red-500 flex-shrink-0" />
+                <p className="text-xs text-red-600">{cancelError}</p>
+              </div>
+            )}
+            <button
+              onClick={handleCancel}
+              disabled={isCancelling}
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-bold transition-all disabled:opacity-60"
+              style={{
+                border: "1.5px solid #fee2e2",
+                color: "#ef4444",
+                backgroundColor: "#fff5f5",
+              }}
+            >
+              {isCancelling ? (
+                <>
+                  <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <XCircle size={15} />
+                  Cancel Order
+                </>
+              )}
+            </button>
+            <p className="text-[10px] text-center text-gray-400">
+              Orders can only be cancelled before confirmation
+            </p>
+          </div>
+        )}
 
         {/* Continue shopping */}
         <Link

@@ -85,7 +85,6 @@ export async function POST(request: Request) {
       notes,
     } = body;
 
-    // Basic validation
     if (
       !customer_name ||
       !customer_phone ||
@@ -103,7 +102,7 @@ export async function POST(request: Request) {
 
     const supabase = createServerClient();
 
-    // Fetch fresh product prices from DB — never trust client-sent prices
+    // Fetch fresh product prices — never trust client-sent prices
     const productIds = items.map((i: { product_id: string }) => i.product_id);
 
     const { data: products, error: productsError } = await supabase
@@ -122,7 +121,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate each item and calculate totals using DB prices
+    // Validate stock and build items
     const productMap = new Map(products.map((p) => [p.id, p]));
     let subtotal = 0;
     const validatedItems = [];
@@ -139,7 +138,10 @@ export async function POST(request: Request) {
 
       if (product.stock_quantity < item.quantity) {
         return Response.json(
-          { data: null, error: `Insufficient stock for: ${product.name}` },
+          {
+            data: null,
+            error: `Insufficient stock for: ${product.name}. Only ${product.stock_quantity} left.`,
+          },
           { status: 400 }
         );
       }
@@ -157,7 +159,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // Fetch store settings for delivery charge
+    // Fetch store settings
     const { data: settings } = await supabase
       .from("store_settings")
       .select("flat_delivery_charge, free_delivery_above")
@@ -168,7 +170,7 @@ export async function POST(request: Request) {
         ? 0
         : settings?.flat_delivery_charge ?? 60;
 
-    // Apply coupon if provided
+    // Apply coupon
     let discountAmount = 0;
 
     if (coupon_code) {
@@ -197,7 +199,7 @@ export async function POST(request: Request) {
 
     const totalAmount = subtotal + deliveryFee - discountAmount;
 
-    // Generate order number: BDB-YYYYMMDD-XXXX
+    // Generate order number
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, "");
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
@@ -248,6 +250,35 @@ export async function POST(request: Request) {
       return Response.json(
         { data: null, error: "Failed to save order items" },
         { status: 500 }
+      );
+    }
+
+    // ── Deduct stock for each item ────────────────────────────
+    // Uses the decrement_stock SQL function to safely deduct
+    // Will not go below 0 due to WHERE stock_quantity >= qty
+    const stockErrors: string[] = [];
+
+    for (const item of validatedItems) {
+      const { error: stockError } = await supabase.rpc("decrement_stock", {
+        product_id: item.product_id,
+        qty: item.quantity,
+      });
+
+      if (stockError) {
+        // Log but don't fail the order — order is already placed
+        // Admin can manually adjust stock if needed
+        console.error(
+          `[orders] Stock deduction failed for ${item.product_id}:`,
+          stockError.message
+        );
+        stockErrors.push(item.product_name);
+      }
+    }
+
+    if (stockErrors.length > 0) {
+      console.warn(
+        "[orders] Stock deduction failed for:",
+        stockErrors.join(", ")
       );
     }
 

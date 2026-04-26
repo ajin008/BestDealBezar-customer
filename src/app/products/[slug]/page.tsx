@@ -317,8 +317,12 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (product) {
       const cartItem = getItem(product.id);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (cartItem) setQuantity(cartItem.quantity);
+      if (cartItem) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setQuantity(cartItem.quantity);
+      } else {
+        setQuantity(1);
+      }
     }
   }, [product, getItem]);
 
@@ -550,6 +554,17 @@ export default function ProductDetailPage() {
                 </div>
               ) : null}
 
+              {/* Available stock count */}
+              {!outOfStock &&
+                product.stock_quantity <= product.low_stock_threshold && (
+                  <div className="bg-amber-50 rounded-xl p-3 flex items-center gap-2">
+                    <AlertCircle size={16} className="text-amber-600" />
+                    <span className="text-sm font-medium text-amber-600">
+                      Only {product.stock_quantity} items left — Order soon!
+                    </span>
+                  </div>
+                )}
+
               {/* Short description */}
               {product.short_description && (
                 <div
@@ -577,7 +592,10 @@ export default function ProductDetailPage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <QuantitySelector
                       quantity={quantity}
-                      onQuantityChange={setQuantity}
+                      onQuantityChange={(q) => {
+                        // Cap at available stock
+                        setQuantity(Math.min(q, product.stock_quantity));
+                      }}
                       maxStock={product.stock_quantity}
                     />
                     <button

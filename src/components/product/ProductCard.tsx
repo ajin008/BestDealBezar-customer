@@ -8,7 +8,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Plus } from "lucide-react";
+import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { formatPrice, getDiscountPercent } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
@@ -19,19 +19,23 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { addItem, isInCart } = useCart();
+  const { addItem, getItem, updateQuantity, isInCart } = useCart();
 
   const firstImage = product.product_images?.[0]?.url ?? null;
   const discount = getDiscountPercent(
     product.actual_price,
     product.selling_price
   );
-  const inCart = isInCart(product.id);
   const outOfStock = product.stock_quantity === 0;
 
-  function handleAddToCart(e: React.MouseEvent) {
+  const cartItem = getItem(product.id);
+  const cartQty = cartItem?.quantity ?? 0;
+  const inCart = isInCart(product.id);
+  const atMaxStock = cartQty >= product.stock_quantity;
+
+  function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
-    if (outOfStock) return;
+    if (outOfStock || atMaxStock) return;
     addItem({
       product_id: product.id,
       name: product.name,
@@ -43,6 +47,15 @@ export default function ProductCard({ product }: ProductCardProps) {
     });
   }
 
+  function handleDecrement(e: React.MouseEvent) {
+    e.preventDefault();
+    if (cartQty <= 1) {
+      updateQuantity(product.id, 0); // removes item
+    } else {
+      updateQuantity(product.id, cartQty - 1);
+    }
+  }
+
   return (
     <Link
       href={ROUTES.product(product.slug)}
@@ -52,7 +65,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Image */}
       <div
         className="relative w-full overflow-hidden"
-        style={{ aspectRatio: "1 / 1", backgroundColor: "#f8fafc" }}
+        style={{ aspectRatio: "1/1", backgroundColor: "#f8fafc" }}
       >
         {firstImage ? (
           <Image
@@ -86,16 +99,21 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
         )}
+
+        {/* Low stock badge */}
+        {!outOfStock &&
+          product.stock_quantity <= product.low_stock_threshold && (
+            <span className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-lg text-white bg-amber-500">
+              Only {product.stock_quantity} left
+            </span>
+          )}
       </div>
 
       {/* Info */}
       <div className="flex flex-col gap-1 p-2.5 flex-1">
-        {/* Unit */}
         <span className="text-[10px] text-gray-400 font-medium">
           {product.unit}
         </span>
-
-        {/* Name */}
         <p
           className="text-xs font-semibold leading-tight line-clamp-2 flex-1"
           style={{ color: "var(--color-navy)" }}
@@ -103,7 +121,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </p>
 
-        {/* Price row */}
+        {/* Price + Cart controls */}
         <div className="flex items-center justify-between gap-1 mt-1">
           <div className="flex flex-col">
             <span
@@ -119,22 +137,60 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
 
-          {/* Add to cart button */}
-          <button
-            onClick={handleAddToCart}
-            disabled={outOfStock}
-            className="h-7 w-7 flex items-center justify-center rounded-xl transition-all active:scale-90 disabled:opacity-40 shrink-0"
-            style={{
-              backgroundColor: inCart
-                ? "var(--color-brand)"
-                : "var(--color-brand-50)",
-              color: inCart ? "#fff" : "var(--color-brand)",
-              border: "1.5px solid var(--color-brand-200)",
-            }}
-          >
-            {inCart ? <ShoppingCart size={13} /> : <Plus size={13} />}
-          </button>
+          {/* Cart controls */}
+          {!outOfStock &&
+            (inCart ? (
+              // Show +/- controls when in cart
+              <div
+                className="flex items-center gap-0 rounded-xl overflow-hidden flex-shrink-0"
+                style={{ border: "1.5px solid var(--color-brand)" }}
+                onClick={(e) => e.preventDefault()}
+              >
+                <button
+                  onClick={handleDecrement}
+                  className="h-7 w-7 flex items-center justify-center transition-colors"
+                  style={{ backgroundColor: "var(--color-brand-50)" }}
+                >
+                  <Minus size={11} style={{ color: "var(--color-brand)" }} />
+                </button>
+                <span
+                  className="w-6 text-center text-xs font-black"
+                  style={{ color: "var(--color-brand)" }}
+                >
+                  {cartQty}
+                </span>
+                <button
+                  onClick={handleAdd}
+                  disabled={atMaxStock}
+                  className="h-7 w-7 flex items-center justify-center transition-colors disabled:opacity-40"
+                  style={{ backgroundColor: "var(--color-brand)" }}
+                >
+                  <Plus size={11} color="#fff" />
+                </button>
+              </div>
+            ) : (
+              // Show + button when not in cart
+              <button
+                onClick={handleAdd}
+                disabled={outOfStock}
+                className="h-7 w-7 flex items-center justify-center rounded-xl transition-all active:scale-90 flex-shrink-0"
+                style={{
+                  backgroundColor: "var(--color-brand-50)",
+                  border: "1.5px solid var(--color-brand-200)",
+                  color: "var(--color-brand)",
+                }}
+              >
+                <Plus size={13} />
+              </button>
+            ))}
         </div>
+
+        {/* Max stock reached warning */}
+        {inCart && atMaxStock && (
+          <p className="text-[9px] text-amber-600 font-semibold">
+            Max stock reached ({product.stock_quantity})
+          </p>
+        )}
       </div>
     </Link>
   );

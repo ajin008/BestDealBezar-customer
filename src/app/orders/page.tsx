@@ -29,7 +29,7 @@ function StatusIcon({ status }: { status: string }) {
   switch (status) {
     case "delivered":
       return <CheckCircle size={15} className="text-green-500" />;
-    case "shipped":
+    case "out_for_delivery":
       return <Truck size={15} className="text-blue-500" />;
     case "cancelled":
       return <XCircle size={15} className="text-red-500" />;
@@ -42,8 +42,7 @@ function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     pending: "bg-amber-50 text-amber-700",
     confirmed: "bg-blue-50 text-blue-700",
-    processing: "bg-purple-50 text-purple-700",
-    shipped: "bg-indigo-50 text-indigo-700",
+    out_for_delivery: "bg-indigo-50 text-indigo-700",
     delivered: "bg-green-50 text-green-700",
     cancelled: "bg-red-50 text-red-600",
   };
@@ -51,8 +50,7 @@ function StatusBadge({ status }: { status: string }) {
   const labels: Record<string, string> = {
     pending: "Order Placed",
     confirmed: "Confirmed",
-    processing: "Being Packed",
-    shipped: "Out for Delivery",
+    out_for_delivery: "Out for Delivery",
     delivered: "Delivered",
     cancelled: "Cancelled",
   };
