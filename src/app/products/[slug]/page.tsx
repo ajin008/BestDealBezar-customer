@@ -29,6 +29,8 @@ import { formatPrice, getDiscountPercent } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 import Skeleton from "@/components/ui/Skeleton";
 import type { ProductWithImages } from "@/types/database";
+import SocialProofBadge from "@/components/product/SocialProofBadge";
+import FeaturedProducts from "@/components/ui/FeaturedProducts";
 
 // ── Image Gallery ─────────────────────────────────────────────
 function ImageGallery({
@@ -551,6 +553,10 @@ export default function ProductDetailPage() {
                 </div>
               ) : null}
 
+              {/* 👇 Add this — only show when in stock */}
+
+              {!outOfStock && <SocialProofBadge productId={product.id} />}
+
               {/* Short description */}
               {product.short_description && (
                 <div
@@ -706,6 +712,19 @@ export default function ProductDetailPage() {
           <p className="text-center text-[10px] text-gray-300 mt-4">
             SKU: {product.sku}
           </p>
+
+          {/* Related Products */}
+          {product.categories && (
+            <FeaturedProducts
+              title="More from this category"
+              subtitle={product.categories.name}
+              filters={{
+                category: product.categories.slug,
+                limit: 6,
+              }}
+              seeAllHref={`/products?category=${product.categories.slug}`}
+            />
+          )}
         </div>
       </div>
 
