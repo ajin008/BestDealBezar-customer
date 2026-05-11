@@ -268,7 +268,7 @@ export default function TermsPage() {
                 📧 <strong>Email:</strong> legal@bestdealbazar.com
               </p>
               <p className="text-navy/80">
-                📞 <strong>Phone:</strong> +91 12345 67890
+                📞 <strong>Phone:</strong> +91 9526659173
               </p>
               <p className="text-navy/80">
                 🏢 <strong>Address:</strong> Kozhikode, Kerala, India
