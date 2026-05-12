@@ -358,7 +358,7 @@ export default function CheckoutPage() {
   const { items, subtotal, deliveryFee, total, clearCart } = useCart();
   const { addresses, isLoading: addressLoading } = useAddresses();
   const { settings } = useStoreSettings();
-  const { coupon } = useCoupon();
+  const { coupon, removeCoupon } = useCoupon();
 
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
@@ -453,6 +453,7 @@ export default function CheckoutPage() {
       // COD — go directly to success
       if (paymentMethod === "cod") {
         clearCart();
+        removeCoupon();
         router.push(`/orders/${order.id}?success=true`);
         return;
       }
@@ -521,6 +522,7 @@ export default function CheckoutPage() {
             }
 
             clearCart();
+            removeCoupon();
             router.push(`/orders/${order.id}?success=true`);
           },
           modal: {

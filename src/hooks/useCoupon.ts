@@ -7,6 +7,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCouponStore } from "@/stores/couponStore";
 
 export interface AppliedCoupon {
   code: string;
@@ -17,7 +18,7 @@ export interface AppliedCoupon {
 }
 
 export function useCoupon() {
-  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+  const { coupon, setCoupon, clearCoupon } = useCouponStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,7 +59,7 @@ export function useCoupon() {
   }
 
   function removeCoupon() {
-    setCoupon(null);
+    clearCoupon();
     setError(null);
   }
 
