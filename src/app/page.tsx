@@ -6,7 +6,7 @@ const BASE_URL = "https://www.bestdealbazar.com";
 export const metadata: Metadata = {
   title: "BestDealBazar — Groceries & Essentials at Wholesale Prices in Kozhikode",
   description:
-    "Shop groceries, FMCG, snacks, and daily essentials at wholesale prices. Free delivery above ₹500 across Kozhikode district. Order online from Adithya Trading.",
+    "Shop groceries, FMCG, snacks, and daily essentials at wholesale prices. Free delivery above ₹500 across Kozhikode district. Order online from Adithya Trading Company.",
   keywords: [
     "grocery delivery Kozhikode",
     "wholesale groceries Kerala",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     "FMCG delivery Kozhikode",
     "daily essentials online",
     "best deals grocery Kozhikode",
-    "Adithya Trading Kozhikode",
+    "Adithya Trading Company Kozhikode",
   ],
   alternates: {
     canonical: BASE_URL,

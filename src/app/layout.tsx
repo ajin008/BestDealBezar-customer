@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "BestDealBazar", url: BASE_URL }],
   creator: "BestDealBazar",
-  publisher: "Adithya Trading",
+  publisher: "Adithya Trading Company",
   category: "Shopping",
   openGraph: {
     type: "website",
@@ -86,7 +86,7 @@ const localBusinessSchema = {
   "@context": "https://schema.org",
   "@type": "GroceryStore",
   name: "BestDealBazar",
-  alternateName: "Adithya Trading",
+  alternateName: "Adithya Trading Company",
   url: BASE_URL,
   description:
     "Shop groceries, FMCG, and daily essentials at wholesale prices with fast delivery across Kozhikode district.",
