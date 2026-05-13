@@ -7,7 +7,7 @@
 // ── App identity ─────────────────────────────────────────────
 export const APP_NAME = "BestDealBazar";
 export const APP_DOMAIN = "bestdealbazar.com";
-export const BUSINESS_NAME = "Adithya Trading";
+export const BUSINESS_NAME = "Adithya Trading Company";
 export const BUSINESS_LOCATION = "Kozhikode, Kerala";
 
 // ── Delivery ─────────────────────────────────────────────────
