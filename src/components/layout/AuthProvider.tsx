@@ -62,17 +62,18 @@ export default function AuthProvider({
           avatar_url: u.user_metadata?.avatar_url ?? null,
         });
 
-        // Ensure profile row exists in DB (safe upsert on every login)
-        supabase.from("profiles").upsert(
-          {
+        // Ensure profile row exists — call API route (uses service role key, bypasses RLS)
+        fetch("/api/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
             id: u.id,
+            name: u.user_metadata?.full_name ?? u.user_metadata?.name ?? null,
+            email: u.email ?? null,
             phone: u.phone ?? u.user_metadata?.phone ?? null,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "id", ignoreDuplicates: true }
-        ).then(({ error }) => {
-          if (error) console.error("[AuthProvider] profile upsert failed:", error.message);
-        });
+            avatar_url: u.user_metadata?.avatar_url ?? null,
+          }),
+        }).catch((err) => console.error("[AuthProvider] profile sync failed:", err));
 
         // Redirect to stored destination after login
         const redirectTo = localStorage.getItem("auth_redirect");
