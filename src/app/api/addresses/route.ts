@@ -111,6 +111,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // Ensure profile row exists — upsert so it's safe to call every time
+    await supabase.from("profiles").upsert(
+      { id: user.id, phone: user.phone ?? null, updated_at: new Date().toISOString() },
+      { onConflict: "id", ignoreDuplicates: true }
+    );
+
     // If setting as default, unset all others first
     if (is_default) {
       await supabase

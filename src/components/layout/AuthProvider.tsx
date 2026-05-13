@@ -52,19 +52,29 @@ export default function AuthProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        const u = session.user;
         setUser({
-          id: session.user.id,
+          id: u.id,
           name:
-            session.user.user_metadata?.full_name ??
-            session.user.user_metadata?.name ??
-            null,
-          email: session.user.email ?? null,
-          phone:
-            session.user.phone ?? session.user.user_metadata?.phone ?? null,
-          avatar_url: session.user.user_metadata?.avatar_url ?? null,
+            u.user_metadata?.full_name ?? u.user_metadata?.name ?? null,
+          email: u.email ?? null,
+          phone: u.phone ?? u.user_metadata?.phone ?? null,
+          avatar_url: u.user_metadata?.avatar_url ?? null,
         });
 
-        // Check for stored redirect destination after login
+        // Ensure profile row exists in DB (safe upsert on every login)
+        supabase.from("profiles").upsert(
+          {
+            id: u.id,
+            phone: u.phone ?? u.user_metadata?.phone ?? null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id", ignoreDuplicates: true }
+        ).then(({ error }) => {
+          if (error) console.error("[AuthProvider] profile upsert failed:", error.message);
+        });
+
+        // Redirect to stored destination after login
         const redirectTo = localStorage.getItem("auth_redirect");
         if (redirectTo) {
           localStorage.removeItem("auth_redirect");
