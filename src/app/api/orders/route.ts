@@ -282,6 +282,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // ── Increment coupon usage_count ──────────────────────────
+    if (coupon_code && discountAmount > 0) {
+      const { data: latestCoupon } = await supabase
+        .from("coupons")
+        .select("usage_count")
+        .eq("code", coupon_code.toUpperCase())
+        .single();
+
+      if (latestCoupon) {
+        const { error: usageError } = await supabase
+          .from("coupons")
+          .update({ usage_count: (latestCoupon.usage_count ?? 0) + 1 })
+          .eq("code", coupon_code.toUpperCase());
+
+        if (usageError) {
+          console.error("[orders] Coupon usage increment failed:", usageError.message);
+        }
+      }
+    }
+
     return Response.json(
       { data: order as Order, error: null },
       { status: 201 }
