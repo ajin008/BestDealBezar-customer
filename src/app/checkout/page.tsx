@@ -526,9 +526,15 @@ export default function CheckoutPage() {
             router.push(`/orders/${order.id}?success=true`);
           },
           modal: {
-            ondismiss: () => {
+            ondismiss: async () => {
+              // Cancel the order and restore stock when user exits without paying
+              await fetch(`/api/orders/${order.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "cancel" }),
+              });
               setIsPlacing(false);
-              setError("Payment cancelled. Your order is saved — try again.");
+              setError("Payment cancelled. Please try again.");
             },
           },
         });
