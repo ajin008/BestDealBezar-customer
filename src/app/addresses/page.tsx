@@ -2,6 +2,7 @@
 // PAGE — /addresses
 // Shows saved delivery addresses
 // User can add, edit, delete, set default
+// Enhanced with current location detection
 // ============================================================
 
 "use client";
@@ -19,10 +20,226 @@ import {
   X,
   Check,
   ChevronLeft,
+  Navigation,
+  Loader2,
+  MapPinned,
+  ExternalLink,
 } from "lucide-react";
-import Link from "next/link";
 import { useAddresses, type AddressInput } from "@/hooks/useAddresses";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+
+// ── Types ────────────────────────────────────────────────────
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+interface LocationState {
+  loading: boolean;
+  error: string | null;
+  coords: Coordinates | null;
+  address: string | null;
+}
+
+// ── Reverse Geocode Helper ───────────────────────────────────
+async function reverseGeocode(coords: Coordinates): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          "Accept-Language": "en",
+        },
+      }
+    );
+    const data = await response.json();
+
+    if (data.display_name) {
+      return data.display_name;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Location Button Component ────────────────────────────────
+function LocationButton({
+  onLocationDetected,
+}: {
+  onLocationDetected: (location: LocationState) => void;
+}) {
+  const [state, setState] = useState<LocationState>({
+    loading: false,
+    error: null,
+    coords: null,
+    address: null,
+  });
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      const errorState: LocationState = {
+        loading: false,
+        error: "Geolocation is not supported by your browser",
+        coords: null,
+        address: null,
+      };
+      setState(errorState);
+      onLocationDetected(errorState);
+      return;
+    }
+
+    setState({ loading: true, error: null, coords: null, address: null });
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+
+        // Try to get human-readable address
+        const address = await reverseGeocode(coords);
+
+        const finalState: LocationState = {
+          loading: false,
+          error: null,
+          coords,
+          address,
+        };
+
+        setState(finalState);
+        onLocationDetected(finalState);
+      },
+      (error) => {
+        let errorMessage = "Unable to retrieve your location";
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage =
+              "Location permission denied. Please enable location access in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "The request to get your location timed out.";
+            break;
+        }
+
+        const errorState: LocationState = {
+          loading: false,
+          error: errorMessage,
+          coords: null,
+          address: null,
+        };
+
+        setState(errorState);
+        onLocationDetected(errorState);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  const clearLocation = () => {
+    const clearedState: LocationState = {
+      loading: false,
+      error: null,
+      coords: null,
+      address: null,
+    };
+    setState(clearedState);
+    onLocationDetected(clearedState);
+  };
+
+  return (
+    <div>
+      {!state.coords || state.loading ? (
+        <button
+          type="button"
+          onClick={detectLocation}
+          disabled={state.loading}
+          className="w-full flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-bold transition-all disabled:opacity-60"
+          style={{
+            border: "2px dashed var(--color-brand)",
+            color: "var(--color-brand)",
+            backgroundColor: "var(--color-brand-50)",
+          }}
+        >
+          {state.loading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Detecting your location...
+            </>
+          ) : (
+            <>
+              <Navigation size={16} />
+              Use Current Location
+            </>
+          )}
+        </button>
+      ) : (
+        <div className="p-3 rounded-xl bg-green-50 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2">
+              <MapPinned
+                size={16}
+                className="text-green-600 mt-0.5 flex-shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-green-700">
+                  Location Detected
+                </p>
+                <p className="text-[11px] text-green-600 mt-0.5 break-all line-clamp-2">
+                  {state.address ||
+                    `${state.coords.latitude.toFixed(
+                      6
+                    )}, ${state.coords.longitude.toFixed(6)}`}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={clearLocation}
+              className="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full hover:bg-green-200 transition-colors"
+            >
+              <X size={12} className="text-green-600" />
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href={`https://www.google.com/maps?q=${state.coords.latitude},${state.coords.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:underline"
+            >
+              <ExternalLink size={11} />
+              View on Map
+            </a>
+            <button
+              type="button"
+              onClick={detectLocation}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:underline"
+            >
+              <Navigation size={11} />
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {state.error && !state.coords && (
+        <div className="mt-2 p-3 rounded-xl bg-red-50">
+          <p className="text-xs text-red-600">{state.error}</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Address Form ──────────────────────────────────────────────
 interface AddressFormProps {
@@ -56,6 +273,22 @@ function AddressForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function handleLocationDetected(location: LocationState) {
+    if (location.address && location.coords) {
+      // Auto-fill address with detected location
+      update("address_line", location.address);
+
+      // Try to extract pincode from the address
+      const pincodeMatch = location.address.match(/\b\d{6}\b/);
+      if (pincodeMatch) {
+        update("pincode", pincodeMatch[0]);
+      }
+    } else {
+      // Clear address if location was cleared
+      update("address_line", "");
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -68,6 +301,21 @@ function AddressForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* Current Location Button */}
+      <div>
+        <p className="text-xs font-semibold text-gray-500 mb-2">Quick Fill</p>
+        <LocationButton onLocationDetected={handleLocationDetected} />
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-xs text-gray-400 font-medium">
+          or enter manually
+        </span>
+        <div className="flex-1 h-px bg-gray-200" />
+      </div>
+
       {/* Label selector */}
       <div>
         <p className="text-xs font-semibold text-gray-500 mb-2">Address Type</p>
@@ -414,7 +662,9 @@ function AddressesContent() {
                           {addr.is_default && (
                             <span
                               className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white"
-                              style={{ backgroundColor: "var(--color-brand)" }}
+                              style={{
+                                backgroundColor: "var(--color-brand)",
+                              }}
                             >
                               DEFAULT
                             </span>
