@@ -11,7 +11,7 @@ import { createServerClient } from "@supabase/ssr";
 
 const PROTECTED_ROUTES = ["/checkout", "/orders"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtected = PROTECTED_ROUTES.some((route) =>

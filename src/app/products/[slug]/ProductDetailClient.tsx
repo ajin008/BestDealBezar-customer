@@ -31,6 +31,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import type { ProductWithImages } from "@/types/database";
 import SocialProofBadge from "@/components/product/SocialProofBadge";
 import FeaturedProducts from "@/components/ui/FeaturedProducts";
+import DeliveryInfoBanner from "@/components/ui/DeliveryInfoBanner";
 
 // ── Image Gallery ─────────────────────────────────────────────
 function ImageGallery({
@@ -670,41 +671,8 @@ export default function ProductDetailClient() {
           )}
 
           {/* Delivery & Returns */}
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div
-              className="bg-white rounded-xl p-4 text-center"
-              style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
-            >
-              <Truck
-                size={22}
-                className="mx-auto mb-2"
-                style={{ color: "var(--color-brand)" }}
-              />
-              <p
-                className="text-sm font-semibold"
-                style={{ color: "var(--color-navy)" }}
-              >
-                Free Delivery
-              </p>
-              <p className="text-xs text-gray-400">Above ₹500 in Kozhikode</p>
-            </div>
-            <div
-              className="bg-white rounded-xl p-4 text-center"
-              style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
-            >
-              <RotateCcw
-                size={22}
-                className="mx-auto mb-2"
-                style={{ color: "var(--color-brand)" }}
-              />
-              <p
-                className="text-sm font-semibold"
-                style={{ color: "var(--color-navy)" }}
-              >
-                Easy Returns
-              </p>
-              <p className="text-xs text-gray-400">7 days return policy</p>
-            </div>
+          <div className="mt-4">
+            <DeliveryInfoBanner />
           </div>
 
           <p className="text-center text-[10px] text-gray-300 mt-4">

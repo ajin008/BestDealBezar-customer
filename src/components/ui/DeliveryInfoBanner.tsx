@@ -11,7 +11,16 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { formatPrice } from "@/lib/utils";
 
 export default function DeliveryInfoBanner() {
-  const { settings } = useStoreSettings();
+  const { settings, isLoading } = useStoreSettings();
+
+  // Show placeholder while loading
+  if (isLoading && !settings) {
+    return (
+      <div className="mt-4 rounded-2xl overflow-hidden animate-pulse">
+        <div className="h-20 bg-gray-100" />
+      </div>
+    );
+  }
 
   const freeAbove = settings?.free_delivery_above ?? 500;
   const deliveryCharge = settings?.flat_delivery_charge ?? 60;
