@@ -6,7 +6,7 @@
 
 "use client";
 
-import { Truck, MapPin, Zap } from "lucide-react";
+import { Truck, MapPin, Zap, Clock } from "lucide-react";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { formatPrice } from "@/lib/utils";
 
@@ -77,6 +77,33 @@ export default function DeliveryInfoBanner() {
           </p>
           <p className="text-[10px] text-gray-400 leading-tight">
             only {formatPrice(deliveryCharge)} fee
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div
+          style={{ width: "1px", backgroundColor: "var(--color-brand-100)" }}
+        />
+
+        {/* Delivery time */}
+        <div
+          className="flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 text-center"
+          style={{ backgroundColor: "var(--color-brand-50)" }}
+        >
+          <div
+            className="h-8 w-8 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: "var(--color-brand)" }}
+          >
+            <Clock size={15} color="#fff" />
+          </div>
+          <p
+            className="text-[11px] font-black leading-tight"
+            style={{ color: "var(--color-navy)" }}
+          >
+            Delivery Time
+          </p>
+          <p className="text-[10px] text-gray-400 leading-tight">
+            within 24 hours
           </p>
         </div>
 
