@@ -133,6 +133,103 @@ function OrderDetailContent() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
 
+  const [isPaying, setIsPaying] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  async function handlePayOnline() {
+    if (!order) return;
+
+    setIsPaying(true);
+    setPaymentError(null);
+
+    try {
+      const paymentRes = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: order.id }),
+      });
+
+      const paymentJson = await paymentRes.json();
+
+      if (paymentJson.error) {
+        setPaymentError(paymentJson.error);
+        setIsPaying(false);
+        return;
+      }
+
+      const { razorpay_order_id, amount, key_id, order_number } =
+        paymentJson.data;
+
+      // Load Razorpay script dynamically
+      if (!(window as any).Razorpay) {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        document.body.appendChild(script);
+        await new Promise((resolve) => {
+          script.onload = resolve;
+        });
+      }
+
+      // @ts-expect-error — Razorpay is loaded globally
+      const rzp = new window.Razorpay({
+        key: key_id,
+        amount: amount * 100,
+        currency: "INR",
+        name: "BestDealBazar",
+        description: `Order ${order_number}`,
+        order_id: razorpay_order_id,
+        prefill: {
+          name: order.customer_name ?? "",
+          email: order.customer_email ?? "",
+          contact: order.customer_phone,
+        },
+        theme: { color: "var(--color-brand)" },
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                order_id: order.id,
+              }),
+            });
+
+            const verifyJson = await verifyRes.json();
+
+            if (verifyJson.error) {
+              setPaymentError("Payment verification failed. Contact support.");
+              setIsPaying(false);
+            } else {
+              window.location.reload();
+            }
+          } catch {
+            setPaymentError("Failed to verify payment. Please try again.");
+            setIsPaying(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setIsPaying(false);
+            setPaymentError("Payment process was closed.");
+          },
+        },
+      });
+
+      rzp.open();
+    } catch {
+      setPaymentError("Something went wrong. Please try again.");
+      setIsPaying(false);
+    }
+  }
+
   async function handleCancel() {
     if (!confirm("Are you sure you want to cancel this order?")) return;
 
@@ -440,6 +537,41 @@ function OrderDetailContent() {
               {order.payment_status === "paid" ? "Paid" : "Payment Pending"}
             </span>
           </div>
+
+          {order.payment_method === "cod" &&
+            order.payment_status === "pending" &&
+            order.status !== "cancelled" &&
+            order.status !== "delivered" && (
+              <div className="mt-4 pt-4 border-t flex flex-col gap-2" style={{ borderColor: "#f1f5f9" }}>
+                {paymentError && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50">
+                    <AlertCircle size={14} className="text-red-500 flex-shrink-0" />
+                    <p className="text-xs text-red-600">{paymentError}</p>
+                  </div>
+                )}
+                <button
+                  onClick={handlePayOnline}
+                  disabled={isPaying}
+                  className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-black text-white transition-all disabled:opacity-60"
+                  style={{ backgroundColor: "var(--color-brand)" }}
+                >
+                  {isPaying ? (
+                    <>
+                      <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                      Processing Payment...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard size={14} />
+                      Pay Online Now
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-center text-gray-400 mt-1">
+                  Secure online payment via UPI, Card, or Net Banking
+                </p>
+              </div>
+            )}
         </div>
 
         {/* Cancel order — only for pending orders */}

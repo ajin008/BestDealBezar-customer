@@ -35,9 +35,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (order.payment_method !== "razorpay") {
+    if (order.payment_method !== "razorpay" && order.payment_method !== "cod") {
       return Response.json(
-        { data: null, error: "Order is not a Razorpay order" },
+        { data: null, error: "Order is not eligible for online payment" },
         { status: 400 }
       );
     }

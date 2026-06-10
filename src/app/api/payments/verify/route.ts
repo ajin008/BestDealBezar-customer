@@ -71,12 +71,33 @@ export async function POST(request: Request) {
       );
     }
 
+    // Fetch current order status
+    const { data: order, error: orderFetchError } = await supabase
+      .from("orders")
+      .select("status")
+      .eq("id", order_id)
+      .single();
+
+    if (orderFetchError || !order) {
+      console.error(
+        "[payments/verify] Order fetch error:",
+        orderFetchError?.message
+      );
+      return Response.json(
+        { data: null, error: "Order not found" },
+        { status: 404 }
+      );
+    }
+
+    const nextStatus = order.status === "pending" ? "confirmed" : order.status;
+
     // Update order status
     const { error: orderError } = await supabase
       .from("orders")
       .update({
         payment_status: "paid",
-        status: "confirmed",
+        payment_method: "razorpay",
+        status: nextStatus,
         updated_at: new Date().toISOString(),
       })
       .eq("id", order_id);

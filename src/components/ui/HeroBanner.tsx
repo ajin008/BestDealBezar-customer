@@ -16,7 +16,7 @@ interface Banner {
 }
 
 export default function HeroBanner() {
-  const [banners, setBanners] = useState<Banner[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]); 
   const [current, setCurrent] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
