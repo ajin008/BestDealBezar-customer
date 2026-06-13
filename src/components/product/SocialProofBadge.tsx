@@ -1,8 +1,7 @@
 // ============================================================
 // COMPONENT — SocialProofBadge
 // Shows "X people purchased in last 24h" — dummy but seeded
-// per product so the number stays consistent on re-renders
-// but varies across products.
+// per product to yield an honest single-digit range (3-9).
 // Usage: <SocialProofBadge productId={product.id} />
 // ============================================================
 
@@ -17,7 +16,6 @@ interface SocialProofBadgeProps {
 }
 
 // Deterministic pseudo-random number seeded by productId
-// so each product always gets the same count (no flicker on re-render)
 function seededRandom(seed: string): number {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
@@ -29,21 +27,8 @@ function seededRandom(seed: string): number {
 
 function getPurchaseCount(productId: string): number {
   const rand = seededRandom(productId);
-  // Range: 8 – 149, weighted toward lower numbers (feels more honest)
-  const ranges = [
-    { min: 8, max: 40, weight: 50 }, // most products: low
-    { min: 41, max: 99, weight: 35 }, // some: moderate
-    { min: 100, max: 149, weight: 15 }, // few: near-high
-  ];
-  const pick = rand % 100;
-  let cumulative = 0;
-  for (const range of ranges) {
-    cumulative += range.weight;
-    if (pick < cumulative) {
-      return range.min + (rand % (range.max - range.min + 1));
-    }
-  }
-  return 34;
+  // Yields a consistent single digit between 3 and 9 inclusive
+  return 3 + (rand % 7);
 }
 
 export default function SocialProofBadge({
@@ -75,7 +60,7 @@ export default function SocialProofBadge({
       <Users size={13} className="text-green-600 shrink-0" />
 
       <p className="text-xs font-medium text-green-800 leading-tight">
-        <span className="font-bold">{count} people</span> bought this in the
+        <span className="font-bold">{count} people</span> ordered this in the
         last 24 hours
       </p>
     </div>
