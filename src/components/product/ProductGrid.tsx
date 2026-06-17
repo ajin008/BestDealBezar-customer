@@ -21,7 +21,7 @@ import ProductCard from "./ProductCard";
 import Skeleton from "@/components/ui/Skeleton";
 import type { ProductWithImages } from "@/types/database";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 20;
 
 interface ProductsResponse {
   data: ProductWithImages[];
