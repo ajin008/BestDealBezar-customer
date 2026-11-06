@@ -211,14 +211,14 @@ export default function CategoryFilterBar() {
               </label>
               <ArrowUpDown
                 size={12}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10"
               />
               <select
                 id="catalog-sort"
                 name="sort"
                 value={activeSort}
                 onChange={(e) => updateParam("sort", e.target.value)}
-                className="editorial-select h-8 pl-7 pr-7 rounded-lg text-xs font-semibold text-slate-700 bg-[#fafaf9] border border-[#e6e4df] hover:border-slate-300 focus:border-[#2a66f4] outline-none cursor-pointer appearance-none transition-colors"
+                className="h-8 pl-7 pr-6 rounded-lg text-xs font-semibold leading-none text-slate-700 bg-[#fafaf9] border border-[#e6e4df] hover:border-slate-300 focus:border-[#2a66f4] outline-none cursor-pointer appearance-none transition-colors"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -228,7 +228,7 @@ export default function CategoryFilterBar() {
               </select>
               <ChevronDown
                 size={12}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10"
               />
             </div>
           </div>

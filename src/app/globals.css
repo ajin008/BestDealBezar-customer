@@ -164,40 +164,6 @@
   z-index: 1;
 }
 
-/* Progressive enhancement for customizable select */
-@supports (appearance: base-select) {
-  .editorial-select,
-  .editorial-select::picker(select) {
-    appearance: base-select;
-  }
-
-  .editorial-select::picker(select) {
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 0.35rem;
-    box-shadow: 0 12px 32px -4px rgba(6, 27, 73, 0.12);
-    font-family: "Satoshi", sans-serif;
-  }
-
-  .editorial-select option {
-    padding: 0.45rem 0.65rem;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #061b49;
-    cursor: pointer;
-  }
-
-  .editorial-select option:hover {
-    background-color: #f8fafc;
-  }
-
-  .editorial-select option::checkmark {
-    color: var(--color-brand);
-  }
-}
-
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
