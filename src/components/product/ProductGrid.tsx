@@ -1,22 +1,21 @@
 // ============================================================
 // COMPONENT — ProductGrid
-// 2-col mobile, 3-col desktop grid
-// Load more pagination
-// Reads filters from URL params
-// ============================================================
-
-// ============================================================
-// COMPONENT — ProductGrid
-// 2-col mobile, 3-col desktop grid
-// Load more pagination
-// Reads filters from URL params
+// Editorial retail catalog grid with active filter chips,
+// layout density toggle, and progressive pagination (20/page)
 // ============================================================
 
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
-import { ShoppingBag, RotateCcw } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  ShoppingBag,
+  RotateCcw,
+  X,
+  LayoutGrid,
+  Grid3x3,
+  ArrowDown,
+} from "lucide-react";
 import ProductCard from "./ProductCard";
 import Skeleton from "@/components/ui/Skeleton";
 import type { ProductWithImages } from "@/types/database";
@@ -42,6 +41,7 @@ async function fetchProducts(
 }
 
 export default function ProductGrid() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<ProductWithImages[]>([]);
   const [total, setTotal] = useState(0);
@@ -49,45 +49,53 @@ export default function ProductGrid() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [denseDesktop, setDenseDesktop] = useState(false);
 
-  // Use ref to track if initial load has been done
   const initialLoadRef = useRef(false);
   const filterKeyRef = useRef<string>("");
+
+  const activeCategory = searchParams.get("category");
+  const activeSearch = searchParams.get("search");
+  const activeFeatured = searchParams.get("featured");
+  const activeNewArrival = searchParams.get("new_arrival");
+  const activeSort = searchParams.get("sort");
 
   // Build API params from URL
   const buildParams = useCallback(
     (pageNum: number) => {
       const params = new URLSearchParams();
-      const category = searchParams.get("category");
-      const search = searchParams.get("search");
-      const featured = searchParams.get("featured");
-      const newArrival = searchParams.get("new_arrival");
-      const sort = searchParams.get("sort");
 
-      if (category) params.set("category", category);
-      if (search) params.set("search", search);
-      if (featured) params.set("featured", featured);
-      if (newArrival) params.set("new_arrival", newArrival);
-      if (sort === "price_asc") params.set("sort", "price_asc");
-      if (sort === "price_desc") params.set("sort", "price_desc");
-      if (sort === "newest") params.set("sort", "newest");
+      if (activeCategory) params.set("category", activeCategory);
+      if (activeSearch) params.set("search", activeSearch);
+      if (activeFeatured) params.set("featured", activeFeatured);
+      if (activeNewArrival) params.set("new_arrival", activeNewArrival);
+      if (activeSort === "price_asc") params.set("sort", "price_asc");
+      if (activeSort === "price_desc") params.set("sort", "price_desc");
+      if (activeSort === "newest") params.set("sort", "newest");
 
       params.set("page", String(pageNum));
       params.set("limit", String(PAGE_SIZE));
       return params;
     },
-    [searchParams]
+    [
+      activeCategory,
+      activeSearch,
+      activeFeatured,
+      activeNewArrival,
+      activeSort,
+    ]
   );
 
   // Create a unique key for current filters
   const getFilterKey = useCallback(() => {
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
-    const featured = searchParams.get("featured");
-    const newArrival = searchParams.get("new_arrival");
-    const sort = searchParams.get("sort");
-    return `${category}|${search}|${featured}|${newArrival}|${sort}`;
-  }, [searchParams]);
+    return `${activeCategory}|${activeSearch}|${activeFeatured}|${activeNewArrival}|${activeSort}`;
+  }, [
+    activeCategory,
+    activeSearch,
+    activeFeatured,
+    activeNewArrival,
+    activeSort,
+  ]);
 
   // Load products function
   const loadProducts = useCallback(
@@ -116,7 +124,6 @@ export default function ProductGrid() {
   useEffect(() => {
     const currentFilterKey = getFilterKey();
 
-    // Skip if this is the initial load
     if (!initialLoadRef.current) {
       initialLoadRef.current = true;
       filterKeyRef.current = currentFilterKey;
@@ -127,7 +134,6 @@ export default function ProductGrid() {
       return;
     }
 
-    // Only reload if filters changed
     if (filterKeyRef.current !== currentFilterKey) {
       filterKeyRef.current = currentFilterKey;
       setIsLoading(true);
@@ -137,44 +143,56 @@ export default function ProductGrid() {
     }
   }, [getFilterKey, loadProducts]);
 
-  // Load more
   async function handleLoadMore() {
     const nextPage = page + 1;
     setIsLoadingMore(true);
     await loadProducts(nextPage, false);
   }
 
-  const hasMore = products.length < total;
+  function removeFilter(key: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(key);
+    params.delete("page");
+    router.push(`/products?${params.toString()}`);
+  }
 
-  // Helper to get aspect ratio style as className
-  const getAspectClass = () => {
-    return "aspect-square";
-  };
+  const hasMore = products.length < total;
+  const progressPercent =
+    total > 0 ? Math.min(100, Math.round((products.length / total) * 100)) : 100;
+
+  const gridColumnsClass = denseDesktop
+    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+    : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 md:gap-4";
 
   // ── Skeleton grid ─────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-2xl overflow-hidden"
-            style={{ border: "1.5px solid #e8ecef" }}
-          >
-            <div className={getAspectClass()}>
-              <Skeleton className="w-full h-full" />
-            </div>
-            <div className="p-2.5 flex flex-col gap-2">
-              <Skeleton className="h-3 w-1/2 rounded" />
-              <Skeleton className="h-3 w-full rounded" />
-              <Skeleton className="h-3 w-3/4 rounded" />
-              <div className="flex justify-between mt-1">
-                <Skeleton className="h-4 w-14 rounded" />
-                <Skeleton className="h-7 w-7 rounded-xl" />
+      <div className="pt-2">
+        <div className="flex items-center justify-between mb-4">
+          <Skeleton className="h-4 w-36 rounded-md" />
+          <Skeleton className="h-7 w-20 rounded-md hidden md:block" />
+        </div>
+        <div className={`grid ${gridColumnsClass}`}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-xl bg-white border border-[#e6e4df] overflow-hidden flex flex-col"
+            >
+              <div className="aspect-square bg-[#f9f9f7] border-b border-[#f1f0ec]">
+                <Skeleton className="w-full h-full rounded-none" />
+              </div>
+              <div className="p-3.5 flex flex-col gap-2.5">
+                <Skeleton className="h-3 w-16 rounded" />
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-4 w-2/3 rounded" />
+                <div className="pt-2 border-t border-[#f3f2ee] flex justify-between items-center mt-1">
+                  <Skeleton className="h-5 w-16 rounded" />
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
@@ -182,15 +200,20 @@ export default function ProductGrid() {
   // ── Error state ───────────────────────────────────────────
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <RotateCcw size={28} className="text-gray-300 mb-3" />
-        <p className="text-sm text-gray-400 mb-4">{error}</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-[#e6e4df] my-4 px-4">
+        <div className="h-12 w-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-3">
+          <RotateCcw size={20} />
+        </div>
+        <h3 className="text-base font-bold text-[#061b49] mb-1">
+          Unable to load catalog
+        </h3>
+        <p className="text-xs text-slate-500 mb-5 max-w-xs">{error}</p>
         <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 rounded-xl text-xs font-bold text-white"
-          style={{ backgroundColor: "var(--color-brand)" }}
+          type="button"
+          onClick={() => loadProducts(1, true)}
+          className="h-9 px-4 rounded-lg text-xs font-semibold text-white bg-[#061b49] hover:bg-[#2a66f4] transition-colors"
         >
-          Try again
+          Retry loading
         </button>
       </div>
     );
@@ -199,76 +222,136 @@ export default function ProductGrid() {
   // ── Empty state ───────────────────────────────────────────
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div
-          className="h-16 w-16 rounded-2xl flex items-center justify-center mb-4"
-          style={{ backgroundColor: "var(--color-brand-50)" }}
-        >
-          <ShoppingBag size={26} style={{ color: "var(--color-brand)" }} />
+      <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-[#e6e4df] my-4 px-4">
+        <div className="h-14 w-14 rounded-2xl bg-[#f4f3ef] border border-[#e6e4df] flex items-center justify-center mb-4 text-[#061b49]">
+          <ShoppingBag size={24} strokeWidth={1.6} />
         </div>
-        <h3
-          className="text-base font-black mb-1"
-          style={{
-            fontFamily: "'Cabinet Grotesk', sans-serif",
-            color: "var(--color-navy)",
-          }}
-        >
-          No products found
+        <h3 className="text-lg font-bold text-[#061b49] mb-1">
+          No matching products
         </h3>
-        <p className="text-sm text-gray-400 max-w-xs">
-          Try a different category or search term
+        <p className="text-xs md:text-sm text-slate-500 max-w-sm mb-5">
+          We couldn&apos;t find any items matching your current filters or search
+          query.
         </p>
+        <button
+          type="button"
+          onClick={() => router.push("/products")}
+          className="h-9 px-4 rounded-lg text-xs font-semibold text-white bg-[#2a66f4] hover:bg-[#1d4ed8] transition-colors"
+        >
+          View all products
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="mt-4">
-      {/* Results count */}
-      <p className="text-xs text-gray-400 mb-3">
-        Showing{" "}
-        <span className="font-bold text-gray-600">{products.length}</span> of{" "}
-        <span className="font-bold text-gray-600">{total}</span> products
-      </p>
+    <div>
+      {/* ── Status & Active Filter Bar ──────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex items-center flex-wrap gap-2">
+          <p className="text-xs text-slate-500 tabular-nums">
+            Showing{" "}
+            <span className="font-semibold text-slate-900">
+              1–{products.length}
+            </span>{" "}
+            of <span className="font-semibold text-slate-900">{total}</span>{" "}
+            {total === 1 ? "item" : "items"}
+          </p>
 
-      {/* Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {/* Active filter dismissal pills */}
+          {activeSearch && (
+            <button
+              type="button"
+              onClick={() => removeFilter("search")}
+              className="inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-medium bg-white border border-[#e6e4df] text-slate-700 hover:border-slate-400 transition-colors"
+            >
+              <span>&ldquo;{activeSearch}&rdquo;</span>
+              <X size={11} className="text-slate-400" />
+            </button>
+          )}
+        </div>
+
+        {/* Desktop Grid Density Toggle */}
+        <div className="hidden md:flex items-center gap-1 bg-white border border-[#e6e4df] rounded-lg p-0.5">
+          <button
+            type="button"
+            onClick={() => setDenseDesktop(false)}
+            aria-label="Standard 4-column view"
+            title="Standard view"
+            className={`h-6 w-7 flex items-center justify-center rounded-md transition-colors ${
+              !denseDesktop
+                ? "bg-[#061b49] text-white"
+                : "text-slate-400 hover:text-slate-700"
+            }`}
+          >
+            <LayoutGrid size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDenseDesktop(true)}
+            aria-label="Compact 5-column view"
+            title="Compact view"
+            className={`h-6 w-7 flex items-center justify-center rounded-md transition-colors ${
+              denseDesktop
+                ? "bg-[#061b49] text-white"
+                : "text-slate-400 hover:text-slate-700"
+            }`}
+          >
+            <Grid3x3 size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Product Grid ────────────────────────────────────── */}
+      <div className={`grid ${gridColumnsClass}`}>
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
 
-      {/* Load more */}
-      {hasMore && (
-        <div className="flex justify-center mt-6 mb-2">
+      {/* ── Editorial Pagination Footer ─────────────────────── */}
+      <div className="mt-10 mb-4 flex flex-col items-center">
+        <p className="text-xs text-slate-500 tabular-nums mb-2">
+          You&apos;ve viewed{" "}
+          <span className="font-semibold text-slate-800">
+            {products.length}
+          </span>{" "}
+          of <span className="font-semibold text-slate-800">{total}</span>{" "}
+          products
+        </p>
+
+        {/* Subtle progress bar */}
+        <div className="w-48 h-1 bg-[#e6e4df] rounded-full overflow-hidden mb-5">
+          <div
+            className="h-full bg-[#061b49] transition-all duration-300 rounded-full"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        {hasMore && (
           <button
+            type="button"
             onClick={handleLoadMore}
             disabled={isLoadingMore}
-            className="flex items-center gap-2 h-11 px-8 rounded-xl text-sm font-bold transition-all disabled:opacity-60"
-            style={{
-              border: "2px solid var(--color-brand)",
-              color: "var(--color-brand)",
-              backgroundColor: "var(--color-brand-50)",
-            }}
+            className="inline-flex items-center justify-center gap-2 h-10 px-6 rounded-xl text-xs font-semibold text-[#061b49] bg-white hover:bg-[#061b49] hover:text-white border border-[#d6d3cd] hover:border-[#061b49] shadow-2xs transition-all disabled:opacity-60"
           >
             {isLoadingMore ? (
               <>
-                <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                Loading...
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                <span>Loading more items...</span>
               </>
             ) : (
-              `Load more (${total - products.length} remaining)`
+              <>
+                <span>
+                  Show more ({Math.min(PAGE_SIZE, total - products.length)}{" "}
+                  more)
+                </span>
+                <ArrowDown size={13} />
+              </>
             )}
           </button>
-        </div>
-      )}
-
-      {/* All loaded */}
-      {!hasMore && products.length > 0 && (
-        <p className="text-center text-xs text-gray-400 mt-6 mb-2">
-          All {total} products loaded
-        </p>
-      )}
+        )}
+      </div>
     </div>
   );
 }

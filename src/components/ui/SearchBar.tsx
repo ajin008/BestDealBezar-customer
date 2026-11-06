@@ -1,7 +1,6 @@
 // ============================================================
 // COMPONENT — SearchBar
-// Standalone search input with navigation
-// Used in Navbar (compact) and as full-width on mobile
+// Native-app style mobile search & compact desktop search
 // ============================================================
 
 "use client";
@@ -32,6 +31,7 @@ export default function SearchBar({
     router.push(
       `${ROUTES.products}?search=${encodeURIComponent(query.trim())}`
     );
+    inputRef.current?.blur();
     onClose?.();
   }
 
@@ -42,36 +42,27 @@ export default function SearchBar({
 
   if (variant === "full") {
     return (
-      <form onSubmit={handleSubmit} className="w-full">
-        <div
-          className="flex items-center gap-2 h-11 px-4 rounded-2xl w-full"
-          style={{
-            border: "2px solid var(--color-brand)",
-            backgroundColor: "#ffffff",
-          }}
-        >
-          <Search
-            size={16}
-            style={{ color: "var(--color-brand)" }}
-            className="flex-shrink-0"
-          />
+      <form onSubmit={handleSubmit} className="w-full" role="search">
+        <div className="flex items-center gap-2.5 h-10 px-3.5 rounded-xl w-full bg-[#f4f3ef] border border-transparent focus-within:bg-white focus-within:border-[#061b49] transition-all">
+          <Search size={15} className="flex-shrink-0 text-slate-400" />
           <input
             ref={inputRef}
-            type="text"
+            type="search"
+            enterKeyHint="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search groceries, snacks, brands..."
+            placeholder="Search rice, oil, snacks, household..."
             autoFocus={autoFocus}
-            className="flex-1 bg-transparent text-sm outline-none min-w-0"
-            style={{ color: "var(--color-text)" }}
+            className="flex-1 bg-transparent text-[13px] font-medium text-[#061b49] placeholder:text-slate-400 outline-none min-w-0"
           />
           {query && (
             <button
               type="button"
               onClick={handleClear}
-              className="flex-shrink-0"
+              aria-label="Clear search"
+              className="flex-shrink-0 h-5 w-5 rounded-full bg-slate-300/70 hover:bg-slate-300 flex items-center justify-center text-slate-600 transition-colors"
             >
-              <X size={15} className="text-gray-400" />
+              <X size={11} />
             </button>
           )}
         </div>
@@ -81,28 +72,31 @@ export default function SearchBar({
 
   // Compact variant — shown in desktop navbar
   return (
-    <form onSubmit={handleSubmit} className="flex-1 min-w-0">
-      <div
-        className="flex items-center gap-2 h-9 px-3 rounded-xl w-full transition-all"
-        style={{
-          border: "2px solid #e8ecef",
-          backgroundColor: "#f8fafc",
-          color: "#888",
-        }}
-      >
-        <Search size={13} className="flex-shrink-0 text-gray-400" />
+    <form onSubmit={handleSubmit} className="flex-1 max-w-md" role="search">
+      <div className="flex items-center gap-2 h-9 px-3 rounded-lg w-full bg-[#f7f7f5] border border-[#e6e4df] hover:border-slate-300 focus-within:bg-white focus-within:border-[#061b49] transition-all">
+        <Search size={14} className="flex-shrink-0 text-slate-400" />
         <input
           ref={inputRef}
-          type="text"
+          type="search"
+          enterKeyHint="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search groceries, snacks, essentials..."
-          className="flex-1 bg-transparent text-xs outline-none min-w-0 text-gray-600 placeholder:text-gray-400"
+          placeholder="Search catalog (e.g. Matta rice, coconut oil, tea)..."
+          className="flex-1 bg-transparent text-xs font-medium text-[#061b49] placeholder:text-slate-400 outline-none min-w-0"
         />
-        {query && (
-          <button type="button" onClick={handleClear}>
-            <X size={12} className="text-gray-400" />
+        {query ? (
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label="Clear search"
+            className="text-slate-400 hover:text-slate-600"
+          >
+            <X size={13} />
           </button>
+        ) : (
+          <span className="hidden lg:inline-block text-[10px] font-semibold text-slate-400 px-1.5 py-0.5 rounded border border-[#e6e4df] bg-white leading-none">
+            ↵
+          </span>
         )}
       </div>
     </form>

@@ -1,139 +1,117 @@
 // ============================================================
 // COMPONENT — DeliveryInfoBanner
-// Shows delivery info pulled from store settings
-// Free delivery threshold + delivery area
+// Native-app trust strip on mobile + 4-column ledger on desktop
 // ============================================================
 
 "use client";
 
-import { Truck, MapPin, Zap, Clock } from "lucide-react";
+import { Truck, MapPin, ShieldCheck, Clock } from "lucide-react";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { formatPrice } from "@/lib/utils";
 
 export default function DeliveryInfoBanner() {
   const { settings, isLoading } = useStoreSettings();
 
-  // Show placeholder while loading
   if (isLoading && !settings) {
     return (
-      <div className="mt-4 rounded-2xl overflow-hidden animate-pulse">
-        <div className="h-20 bg-gray-100" />
-      </div>
+      <div className="mt-3 md:mt-4 h-10 md:h-16 rounded-xl bg-white border border-[#e6e4df] animate-pulse" />
     );
   }
 
   const freeAbove = settings?.free_delivery_above ?? 500;
   const deliveryCharge = settings?.flat_delivery_charge ?? 60;
 
+  // Compact mobile pills — never truncates!
+  const mobilePills = [
+    {
+      icon: Truck,
+      label:
+        freeAbove <= 10
+          ? "Free Delivery"
+          : `Free Delivery above ${formatPrice(freeAbove)}`,
+    },
+    {
+      icon: Clock,
+      label: "24-Hour Dispatch",
+    },
+    {
+      icon: ShieldCheck,
+      label: "Direct Wholesale",
+    },
+    {
+      icon: MapPin,
+      label: "Kozhikode District",
+    },
+  ];
+
+  const desktopPillars = [
+    {
+      icon: Truck,
+      title:
+        freeAbove <= 10
+          ? "Free Doorstep Delivery"
+          : `Free Delivery > ${formatPrice(freeAbove)}`,
+      subtitle:
+        freeAbove <= 10
+          ? "Across Kozhikode district"
+          : `Flat ${formatPrice(deliveryCharge)} below threshold`,
+    },
+    {
+      icon: Clock,
+      title: "24-Hour Dispatch",
+      subtitle: "Prompt doorstep fulfillment",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Direct Wholesale",
+      subtitle: "Adithya Trading Co. pricing",
+    },
+    {
+      icon: MapPin,
+      title: "Kozhikode District",
+      subtitle: "Dedicated local network",
+    },
+  ];
+
   return (
-    <div
-      className="mt-4 rounded-2xl overflow-hidden"
-      style={{ border: "1.5px solid var(--color-brand-100)" }}
-    >
-      <div className="flex items-stretch">
-        {/* Free delivery */}
-        <div
-          className="flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 text-center"
-          style={{ backgroundColor: "var(--color-brand-50)" }}
-        >
+    <section aria-label="Store guarantees and delivery policy" className="mt-3 md:mt-4">
+      {/* ── Mobile: Single-Row Scrollable App Pill Strip ─────── */}
+      <div
+        className="md:hidden flex items-center gap-2 overflow-x-auto py-0.5"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {mobilePills.map(({ icon: Icon, label }) => (
           <div
-            className="h-8 w-8 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "var(--color-brand)" }}
+            key={label}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white border border-[#e6e4df] text-[11px] font-semibold text-[#061b49] whitespace-nowrap"
           >
-            <Truck size={15} color="#fff" />
+            <Icon size={13} className="text-[#2a66f4] flex-shrink-0" />
+            <span>{label}</span>
           </div>
-          <p
-            className="text-[11px] font-black leading-tight"
-            style={{ color: "var(--color-navy)" }}
-          >
-            Free Delivery
-          </p>
-          <p className="text-[10px] text-gray-400 leading-tight">
-            above {formatPrice(freeAbove)}
-          </p>
-        </div>
-
-        {/* Divider */}
-        <div
-          style={{ width: "1px", backgroundColor: "var(--color-brand-100)" }}
-        />
-
-        {/* Delivery charge */}
-        <div
-          className="flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 text-center"
-          style={{ backgroundColor: "var(--color-brand-50)" }}
-        >
-          <div
-            className="h-8 w-8 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "var(--color-brand)" }}
-          >
-            <Zap size={15} color="#fff" />
-          </div>
-          <p
-            className="text-[11px] font-black leading-tight"
-            style={{ color: "var(--color-navy)" }}
-          >
-            Fast Delivery
-          </p>
-          <p className="text-[10px] text-gray-400 leading-tight">
-            only {formatPrice(deliveryCharge)} fee
-          </p>
-        </div>
-
-        {/* Divider */}
-        <div
-          style={{ width: "1px", backgroundColor: "var(--color-brand-100)" }}
-        />
-
-        {/* Delivery time */}
-        <div
-          className="flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 text-center"
-          style={{ backgroundColor: "var(--color-brand-50)" }}
-        >
-          <div
-            className="h-8 w-8 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "var(--color-brand)" }}
-          >
-            <Clock size={15} color="#fff" />
-          </div>
-          <p
-            className="text-[11px] font-black leading-tight"
-            style={{ color: "var(--color-navy)" }}
-          >
-            Delivery Time
-          </p>
-          <p className="text-[10px] text-gray-400 leading-tight">
-            within 24 hours
-          </p>
-        </div>
-
-        {/* Divider */}
-        <div
-          style={{ width: "1px", backgroundColor: "var(--color-brand-100)" }}
-        />
-
-        {/* Delivery area */}
-        <div
-          className="flex-1 flex flex-col items-center justify-center gap-1 py-3 px-2 text-center"
-          style={{ backgroundColor: "var(--color-brand-50)" }}
-        >
-          <div
-            className="h-8 w-8 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: "var(--color-brand)" }}
-          >
-            <MapPin size={15} color="#fff" />
-          </div>
-          <p
-            className="text-[11px] font-black leading-tight"
-            style={{ color: "var(--color-navy)" }}
-          >
-            Kozhikode
-          </p>
-          <p className="text-[10px] text-gray-400 leading-tight">
-            district only
-          </p>
-        </div>
+        ))}
       </div>
-    </div>
+
+      {/* ── Desktop: 4-Column Architectural Service Ledger ──── */}
+      <div className="hidden md:grid md:grid-cols-4 bg-white rounded-xl border border-[#e6e4df] divide-x divide-[#f1f0ec] overflow-hidden">
+        {desktopPillars.map(({ icon: Icon, title, subtitle }) => (
+          <div
+            key={title}
+            className="flex items-center gap-3 px-4 py-3.5 min-w-0"
+          >
+            <div className="h-8 w-8 rounded-lg bg-[#f7f7f5] border border-[#e6e4df] flex items-center justify-center flex-shrink-0 text-[#061b49]">
+              <Icon size={15} strokeWidth={1.9} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-[#061b49] truncate leading-tight tabular-nums">
+                {title}
+              </p>
+              <p className="text-[11px] text-slate-500 truncate mt-0.5 leading-tight tabular-nums">
+                {subtitle}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

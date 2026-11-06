@@ -84,10 +84,10 @@
 @layer base {
   body {
     background-color: #f7f7f5;
-    color: #111111;
+    color: #0f172a;
     font-family: "Satoshi", sans-serif;
     font-weight: 400;
-    line-height: 1.6;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -100,8 +100,9 @@
   h6 {
     font-family: "Cabinet Grotesk", sans-serif;
     font-weight: 700;
-    line-height: 1.2;
-    color: #111111;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: #061b49;
   }
 
   a {
@@ -125,4 +126,78 @@
   select {
     font-family: "Satoshi", sans-serif;
   }
+}
+
+/* Editorial retail product card with stretched-link pattern */
+.editorial-card {
+  position: relative;
+  container-type: inline-size;
+  background-color: #ffffff;
+  border: 1px solid #e6e4df;
+  border-radius: 12px;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.editorial-card a.card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.editorial-card a.card-link:focus-visible {
+  outline: none;
+}
+
+.editorial-card:has(a.card-link:focus-visible) {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.editorial-card:has(a.card-link:hover) {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px -6px rgba(6, 27, 73, 0.07), 0 2px 6px -1px rgba(6, 27, 73, 0.04);
+}
+
+.editorial-card :where(a:not(.card-link), button, input) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Progressive enhancement for customizable select */
+@supports (appearance: base-select) {
+  .editorial-select,
+  .editorial-select::picker(select) {
+    appearance: base-select;
+  }
+
+  .editorial-select::picker(select) {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.35rem;
+    box-shadow: 0 12px 32px -4px rgba(6, 27, 73, 0.12);
+    font-family: "Satoshi", sans-serif;
+  }
+
+  .editorial-select option {
+    padding: 0.45rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #061b49;
+    cursor: pointer;
+  }
+
+  .editorial-select option:hover {
+    background-color: #f8fafc;
+  }
+
+  .editorial-select option::checkmark {
+    color: var(--color-brand);
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
